@@ -78,13 +78,14 @@ a bar plot to highlight the top 10 movies by popularity and show their awards
 highchart() %>%
   hc_chart(type = 'column') %>%
   hc_xAxis(categories = top_10_movies$title) %>%
-  hc_add_series(name = "Popularity", data = top_10_movies$popularity) %>%
-  hc_add_series(name = "Academy Award", data = top_10_movies$academy_award, type = 'line') %>%
-  hc_add_series(name = "Academy Nominated", data = top_10_movies$academy_nominated, type = 'line') %>%
-  hc_add_series(name = "Palme D'Or", data = top_10_movies$palme_dor, type = 'line') %>%
-  hc_add_series(name = "Golden Lion", data = top_10_movies$golden_lion, type = 'line') %>%
+  hc_add_series(name = "Popularity", data = top_10_movies$popularity, color = "#dd1c77") %>%
+  hc_add_series(name = "Academy Award", data = top_10_movies$academy_award, type = 'line', color = "darkgreen") %>%
+  hc_add_series(name = "Academy Nominated", data = top_10_movies$academy_nominated, type = 'line', color = "#31a354") %>%
+  hc_add_series(name = "Palme D'Or", data = top_10_movies$palme_dor, type = 'line', color = "#a1d99b") %>%
+  hc_add_series(name = "Golden Lion", data = top_10_movies$golden_lion, type = 'line', color = "#e5f5e0") %>%
   hc_title(text = "Top Movies by Popularity and Awards") %>%
   hc_subtitle(text = "Highlighting Awards Won")
+
 ```
 
 
@@ -103,9 +104,10 @@ popularity_by_year <- grouped_data %>%
 highchart() %>%
   hc_chart(type = 'line') %>%
   hc_xAxis(title = list(text = "Release Year"), categories = popularity_by_year$release_year) %>%
-  hc_add_series(name = "Average Popularity", data = popularity_by_year$avg_popularity) %>%
+  hc_add_series(name = "Average Popularity", data = popularity_by_year$avg_popularity, color = "#8856a7") %>%
   hc_title(text = "Average Movie Popularity by Release Year") %>%
   hc_subtitle(text = "Trends in Movie Popularity Over Time")
+
 
 ```
 
@@ -128,7 +130,7 @@ highchart() %>%
 
 ```
 
-## Heatmap of Awards and Popularity
+## Heatmap of Awards and Popularity -- not ok
 
 [Heatmap]
 This chart can show the intensity of awards and popularity across movies. It can help identify movies that are both highly popular and have won multiple awards
@@ -146,7 +148,7 @@ highchart() %>%
 ```
 
 
-## Languages (NOT OK)
+## LANGUAGES -- not ok
 
 ```{r}
 # Load necessary libraries
@@ -178,18 +180,17 @@ all_movies_languages <- grouped_data %>%
   mutate(language = strsplit(language, ", ")) %>%
   unnest(language)
 
-# Calculate language distribution
-language_distribution <- all_movies_languages %>%
-  count(language)
+# Count the number of movies for each language
+language_count <- all_movies_languages %>%
+  count(language, sort = TRUE)
 
-# Create a bar chart to show the distribution of languages
+# Create a bar chart to show the number of movies for each language
 highchart() %>%
   hc_chart(type = 'column') %>%
-  hc_xAxis(categories = language_distribution$language) %>%
-  hc_add_series(name = "Number of Movies", data = language_distribution$n) %>%
-  hc_title(text = "Language Distribution of All Movies") %>%
-  hc_subtitle(text = "Languages of All Movies in the Dataset")
+  hc_xAxis(categories = language_count$language) %>%
+  hc_add_series(name = "Number of Movies", data = language_count$n, color = "#dd1c77") %>%
+  hc_title(text = "Number of Movies by Language") %>%
+  hc_subtitle(text = "Distribution of Movies Across Languages")
 
 ```
-
 
