@@ -1,0 +1,459 @@
+---
+title: "Movies Popularity"
+author: "Ekin Kizildas, Aurora Sterpellone"
+date: "2025-02-23"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+## MARVIN'S CODE:
+
+```{r}
+#
+# library(dotenv)
+# 
+# 
+# api_key <-"fe3e27a7dc7ff2533c6437f18b07d993"
+# 
+# ```
+# 
+# ```{r}
+# library(scrapex)
+# library(httr)
+# library(jsonlite)
+# library(furrr)
+# library(tidyverse)
+# 
+# ```
+# 
+# 
+# ```{r}
+# dotenv::load_dot_env()
+# 
+# # Function to get API keys from environment variables
+# get_api_keys <- function() {
+#   # Get all environment variables
+#   all_env <- Sys.getenv()
+#   
+#   # Filter for Alpha Vantage keys
+#   key_names <- grep("^ALPHA_VANTAGE_KEY_", names(all_env), value = TRUE)
+#   
+#   # Extract the values
+#   api_keys <- sapply(key_names, function(key) Sys.getenv(key))
+#   
+#   # Filter out empty keys
+#   api_keys <- api_keys[api_keys != ""]
+#   
+#   if (length(api_keys) == 0) {
+#     stop("No Alpha Vantage API keys found in environment variables. Please check your .env file.")
+#   }
+#   
+#   cat("Found", length(api_keys), "API keys in environment variables\n")
+#   return(api_keys)
+# }
+
+```
+
+
+## Getting the data from TMDB: movies and popularity
+STEP 1: Fetch Top 50 Movies Per Language
+STEP 2: Fetch Popularity by Country
+
+```{r}
+
+
+# ✅ Enable parallel processing (4 workers)
+plan(multisession, workers = 4)
+
+
+# ✅ Define time range
+start_year <- 2000  
+end_year <- as.numeric(format(Sys.Date(), "%Y"))
+
+# ✅ Define countries
+countries <- c("US", "GB", "DE", "FR", "TR", "IN", "JP", "ES", "IT", "BR")
+
+# ✅ Define selected languages
+languages <- c("es", "fr", "de", "tr", "ja", "ru", "zh", "ko", "pt", "hi", "it")
+
+### **STEP 1: Fetch Top 50 Movies Per Language (Faster)**
+fetch_movies_by_language <- function(lang) {
+  movies_list <- list()
+  
+  for (page in 1:2) {  # ✅ Limit to first 2 pages (~50 movies per language)
+    movie_url <- paste0("https://api.themoviedb.org/3/discover/movie?api_key=", api_key,
+                        "&sort_by=popularity.desc",
+                        "&primary_release_date.gte=", start_year, "-01-01",
+                        "&primary_release_date.lte=", end_year, "-12-31",
+                        "&vote_count.gte=500",
+                        "&with_original_language=", lang,
+                        "&page=", page)
+
+    response <- tryCatch({
+      GET(movie_url, timeout(10))
+    }, error = function(e) NULL)
+
+    Sys.sleep(runif(1, 1, 2))  # ✅ Shorter delay (1-2 sec)
+
+    if (!is.null(response) && status_code(response) == 200) {
+      movies <- fromJSON(content(response, "text", encoding = "UTF-8"))$results
+
+      if (!is.null(movies) && length(movies) > 0) {
+        movie_df <- tibble(
+          movie_id = movies$id,
+          title = movies$title,
+          language = lang,  
+          popularity = movies$popularity,
+          genre_ids = sapply(movies$genre_ids, function(x) paste(x, collapse = ",")) # ✅ Store genre codes
+        )
+        movies_list <- append(movies_list, list(movie_df))
+      }
+    }
+  }
+
+  if (length(movies_list) > 0) {
+    return(bind_rows(movies_list))
+  } else {
+    return(NULL)
+  }
+}
+
+# ✅ Fetch movies in parallel
+all_movies <- future_map_dfr(languages, fetch_movies_by_language, .progress = TRUE)
+
+# ✅ Save movies dataset
+write.csv(all_movies, "optimized_movies.csv", row.names = FALSE)
+
+print(dim(all_movies))  
+head(all_movies)
+
+
+### **STEP 2: Fetch Popularity by Country (Parallel & Faster)**
+fetch_popularity_by_country <- function(movie) {
+  movie_id <- movie$movie_id
+  title <- movie$title
+  lang <- movie$language
+  genre <- movie$genre_ids
+
+  country_popularity_list <- future_map_dfr(countries, function(country) {
+    country_url <- paste0("https://api.themoviedb.org/3/movie/", movie_id,
+                          "?api_key=", api_key, "&region=", country)
+
+    response <- tryCatch({
+      GET(country_url, timeout(8))  # ✅ Shorter timeout
+    }, error = function(e) NULL)
+
+    Sys.sleep(runif(1, 1, 2))  # ✅ Less waiting time
+
+    if (!is.null(response) && status_code(response) == 200) {
+      country_data <- fromJSON(content(response, "text", encoding = "UTF-8"))
+      return(tibble(
+        movie_id = movie_id,
+        title = title,
+        language = lang,
+        genre_ids = genre,
+        country = country,
+        popularity = country_data$popularity
+      ))
+    }
+    return(NULL)
+  }, .progress = TRUE)
+
+  return(country_popularity_list)
+}
+
+# ✅ Fetch popularity in parallel for multiple movies at once
+all_movies_popularity <- future_map_dfr(split(all_movies, seq(nrow(all_movies))), fetch_popularity_by_country, .progress = TRUE)
+
+# ✅ Save final dataset
+write.csv(all_movies_popularity, "movies_with_popularity.csv", row.names = FALSE)
+
+print(dim(all_movies_popularity))  
+head(all_movies_popularity)
+
+
+
+```
+
+
+## Popularity
+
+```{r}
+movies_with_popularity <- read_csv("movies_with_popularity.csv")
+
+
+all_movies_popularity<- movies_with_popularity
+
+
+df_summarized <- all_movies_popularity %>%
+  group_by(movie_id, title, language, genre_ids, country) %>%
+  summarise(popularity = mean(popularity, na.rm = TRUE), .groups = "drop")  # Ortalama alınarak tekil hale getirildi
+
+
+all_movies_popularity <- df_summarized %>%
+  pivot_wider(names_from = country, values_from = popularity, values_fill = list(popularity = NA))
+
+
+```
+
+
+## Getting Academy Awards
+
+```{r}
+library(rvest)
+library(scrapex)
+library(rvest)
+library(stringr)
+
+# Wikipedia page URL
+oscar_url <- "https://en.wikipedia.org/wiki/List_of_Academy_Award%E2%80%93winning_films"
+
+# Read the page
+oscar_page <- read_html(oscar_url)
+
+# Select the table that contains the Oscar-winning movies
+oscar_movies <- oscar_page %>%
+  html_nodes("table.wikitable") %>%
+  .[[1]] %>%  # First table contains the main list
+  html_table(fill = TRUE)
+
+# Show the first few rows
+print(head(oscar_movies))
+
+# Rename columns for clarity
+colnames(oscar_movies) <- c("film", "year", "awards_won", "nominations")
+
+# Clean data
+oscar_movies_clean <- oscar_movies %>%
+  mutate(
+    year = as.numeric(str_extract(year, "\\d{4}")),  # Extract only the year
+    awards_won = as.numeric(awards_won),  # Convert to numeric
+    nominations = as.numeric(nominations)  # Convert to numeric
+  ) %>%
+  drop_na()  # Remove rows with missing values
+
+# Show cleaned dataset
+print(head(oscar_movies_clean, 10))
+
+# Save the cleaned data to a CSV file
+write.csv(oscar_movies_clean, "oscar_winning_films.csv", row.names = FALSE)
+
+```
+
+
+## Getting Venice's Golden Lions
+
+```{r}
+library(scrapex)
+library(rvest)
+library(dplyr)
+library(stringr)
+
+url <- "https://en.wikipedia.org/wiki/Golden_Lion"
+
+page <- read_html(url)
+
+tables <- page %>%
+  html_nodes("table.wikitable")
+
+golden_lion_table <- tables[[1]] %>%
+  html_table(fill = TRUE)
+
+print(colnames(golden_lion_table))
+
+if (any(is.na(colnames(golden_lion_table))) | any(colnames(golden_lion_table) == "")) {
+  colnames(golden_lion_table) <- c("Year", "Film", "Director", "Country")
+}
+
+golden_lion_clean <- golden_lion_table %>%
+  rename(year = Year, film = `English Title`, director = Director, country = `Production Country`) %>%
+  filter(!is.na(year) & year != "") %>%  # Boş satırları temizle
+  mutate(
+    year = as.numeric(str_extract(year, "\\d{4}")),  
+    film = str_trim(film),  
+    director = str_trim(director),  
+    country = str_trim(country)  
+  )
+
+print(head(golden_lion_clean, 10))
+
+write.csv(golden_lion_clean, "venice_film_festival_winners.csv", row.names = FALSE)
+
+```
+
+
+## Getting Cannes' Palme D'Or
+
+```{r}
+
+# Load necessary libraries
+library(rvest)
+library(dplyr)
+library(stringr)
+
+# Wikipedia page URL for Palme d'Or winners
+url <- "https://en.wikipedia.org/wiki/Palme_d%27Or"
+
+# Read the page
+page <- read_html(url)
+
+# Get all tables from the page
+tables <- page %>%
+  html_nodes("table.wikitable")
+
+# Extract tables 7, 8, and 9
+table_7 <- tables[[7]] %>% html_table(fill = TRUE)
+table_8 <- tables[[8]] %>% html_table(fill = TRUE)
+table_9 <- tables[[9]] %>% html_table(fill = TRUE)
+
+# Combine the tables into a single data frame
+palme_dor_tables <- bind_rows(table_7, table_8, table_9)
+
+# Check column names
+print(colnames(palme_dor_tables))
+
+# If column names are empty, assign new names
+if (any(is.na(colnames(palme_dor_tables))) | any(colnames(palme_dor_tables) == "")) {
+  colnames(palme_dor_tables) <- c("Year", "Film", "Director", "Country")
+}
+
+# Clean the data
+palme_dor_clean <- palme_dor_tables %>%
+  rename(year = Year, film = `English Title`, director = Director, country = `Production Country`) %>%
+  filter(!is.na(year) & year != "") %>%  # Remove empty rows
+  mutate(
+    year = as.numeric(str_extract(year, "\\d{4}")),  # Extract year in numeric format
+    film = str_trim(film),  # Trim film title
+    director = str_trim(director),  # Trim director name
+    country = str_trim(country)  # Trim country name
+  )
+
+# Display the cleaned data
+print(head(palme_dor_clean, 10))
+
+# Save the cleaned data to a CSV file
+write.csv(palme_dor_clean, "cannes_film_festival_winners.csv", row.names = FALSE)
+
+```
+
+
+## Merging the Awards Datasets
+
+1. rename columns
+
+```{r}
+library(dplyr)
+library(readr)
+
+# Load the datasets
+cannes_winners <- read_csv("cannes_film_festival_winners.csv")
+venice_winners <- read_csv("venice_film_festival_winners.csv")
+oscar_winners <- read_csv("oscar_winning_films.csv")
+
+# Rename columns in cannes_winners
+cannes_winners <- cannes_winners %>%
+  rename(
+    title = film,
+    original_title = `Original Title`
+  ) %>%
+  select(year, title, original_title, director, country)
+
+# Rename columns in venice_winners and drop the 'country' column
+venice_winners <- venice_winners %>%
+  rename(
+    title = film,
+    original_title = `Original Title`
+  ) %>%
+  select(-country)  # Drop the 'country' column
+
+# Rename columns in oscar_winners
+oscar_winners <- oscar_winners %>%
+  rename(title = film)
+
+```
+
+2. binary indicators
+
+```{r}
+# Create binary indicator columns for each award
+
+cannes_winners <- cannes_winners %>%
+  mutate(palme_dor = 1) %>%
+  select(title, original_title, year, director, country, palme_dor)
+
+venice_winners <- venice_winners %>%
+  mutate(golden_lion = 1) %>%
+  select(title, original_title, year, director, golden_lion)
+
+oscar_winners <- oscar_winners %>%
+  mutate(academy_award = 1, academy_nominated = ifelse(nominations > 0, 1, 0)) %>%
+  select(title, year, academy_award, academy_nominated)
+
+# Merge the datasets
+# First, merge Oscar winners with Cannes winners
+merged_data <- full_join(oscar_winners, cannes_winners, by = c("title", "year")) %>%
+  mutate(
+    academy_award = ifelse(is.na(academy_award), 0, academy_award),
+    academy_nominated = ifelse(is.na(academy_nominated), 0, academy_nominated),
+    palme_dor = ifelse(is.na(palme_dor), 0, palme_dor)
+  )
+
+# Next, merge the result with Venice winners
+merged_data <- full_join(merged_data, venice_winners, by = c("title", "year")) %>%
+  mutate(
+    golden_lion = ifelse(is.na(golden_lion), 0, golden_lion)
+  )
+
+# Print the resulting dataset
+print(merged_data)
+
+# Filter the dataset to include only movies from 2000 to 2025
+merged_data <- merged_data %>%
+  filter(year >= 2000 & year <= 2025)
+
+```
+
+
+3. delete original_title & director columns
+
+```{r}
+merged_data <- merged_data %>%
+  select(-original_title.x, -original_title.y, -director.x, -director.y)
+
+```
+
+4. dealing with NAs in academy_award - academy_nominated - palme_dor
+
+```{r}
+merged_data <- merged_data %>%
+  mutate(across(c(academy_award, academy_nominated, palme_dor), ~ replace(., is.na(.), 0)))
+
+```
+
+5. SAVE EVERYTHING:
+
+```{r}
+# Save the resulting dataset to a CSV file
+write.csv(merged_data, "merged_awards_data.csv", row.names = FALSE)
+
+```
+
+## MERGING THE WHOLE DATASET
+
+```{r}
+
+awards_data <-  merged_data
+movies_data <-  all_movies_popularity
+
+final_data <- left_join(movies_data, awards_data, by = "title")
+
+final_data <- final_data %>%
+  mutate(across(c(academy_award, academy_nominated, palme_dor, golden_lion), ~ replace(., is.na(.), 0)))
+
+write.csv(final_data, "final_data.csv")
+```
+
