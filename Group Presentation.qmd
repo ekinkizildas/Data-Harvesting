@@ -1,0 +1,34 @@
+---
+title: "Data Harvesting Group Presentation"
+format: revealjs
+editor: visual
+---
+
+```{r}
+library(scrapex)
+library(dotenv)
+library(httr)
+library(jsonlite)
+library(furrr)
+ library(httr)
+library(jsonlite)
+library(tidyverse)
+library(furrr)
+library(httr)
+library(jsonlite)
+library(tidyverse)
+library(furrr)
+library(httr)
+library(jsonlite)
+library(tidyverse)
+library(furrr)
+
+```
+
+```{r}
+dotenv::load_dot_env()
+api_key <- Sys.getenv("api_key")
+
+```
+
+hi
