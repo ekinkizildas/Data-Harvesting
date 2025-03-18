@@ -479,7 +479,7 @@ delete year & country.y columns & renames country
 
 ```{r}
 final_data <- final_data %>%
-  select(-year, -country.y) %>%
+  select(-year, -country.y, -original_language) %>%
   rename(country = country.x)
 
 ```
