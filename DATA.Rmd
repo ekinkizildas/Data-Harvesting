@@ -473,6 +473,20 @@ final_data <- left_join(movies_data, awards_data, by = "title")
 final_data <- final_data %>%
   mutate(across(c(academy_award, academy_nominated, palme_dor, golden_lion), ~ replace(., is.na(.), 0)))
 
+```
+
+delete year & country.y columns & renames country
+
+```{r}
+final_data <- final_data %>%
+  select(-year, -country.y) %>%
+  rename(country = country.x)
+
+```
+
+export
+```{r}
 write.csv(final_data, "final_data.csv")
+
 ```
 
