@@ -41,6 +41,7 @@ api_key <- Sys.getenv("api_key")
 scrapes for the movie id, title, year of release, popularity score, original language, poster
 
 ```{r}
+set.seed(123)
 # ✅ Enable parallel processing (4 workers)
 plan(multisession, workers = 4)
 
@@ -137,7 +138,7 @@ fetch_regional_release_dates <- function(movie) {
 }
 
 # ✅ Fetch regional release dates in parallel for multiple movies at once
-all_movies_regional_release_dates <- future_map_dfr(split(all_movies, seq(nrow(all_movies))), fetch_regional_release_dates, .progress = TRUE)
+all_movies_regional_release_dates <- future_map_dfr(split(all_movies, seq(nrow(all_movies))), fetch_regional_release_dates, .progress = TRUE, .options = furrr_options(seed = TRUE))
 
 # ✅ Save final dataset
 write.csv(all_movies_regional_release_dates, "movies_with_regional_release_dates.csv", row.names = FALSE)
@@ -149,7 +150,9 @@ head(all_movies_regional_release_dates)
 
 scrapes also for the release date
 ```{r}
-# ✅ Enable parallel processing (4 workers)
+
+set.seed(123)
+# Enable parallel processing (4 workers)
 plan(multisession, workers = 4)
 
 # ✅ Define time range
@@ -203,7 +206,7 @@ fetch_movies_by_language <- function(lang) {
 }
 
 # ✅ Fetch movies in parallel
-all_movies <- future_map_dfr(languages, fetch_movies_by_language, .progress = TRUE)
+all_movies <- future_map_dfr(languages, fetch_movies_by_language, .progress = TRUE, .options = furrr_options(seed = TRUE))
 
 # ✅ Save movies dataset
 write.csv(all_movies, "optimized_movies.csv", row.names = FALSE)
@@ -485,8 +488,190 @@ final_data <- final_data %>%
 ```
 
 export
+
 ```{r}
+
+
 write.csv(final_data, "final_data.csv")
 
 ```
+
+
+
+```{r}
+df <- read.csv("final_data.csv")
+
+
+
+library(tidyverse)
+
+# 1. Number of Movies by Year
+ggplot(df, aes(x = as.factor(release_year))) +
+  geom_bar(fill = "blue", alpha = 0.7) +
+  labs(title = "Number of Movies by Year", x = "Release Year", y = "Movie Count") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+# 2. Movie Distribution by Country (Top 10 countries producing the most movies)
+top_countries <- df %>%
+  count(country, sort = TRUE) %>%
+  top_n(10, n)
+
+ggplot(top_countries, aes(x = reorder(country, n), y = n)) +
+  geom_bar(stat = "identity", fill = "red", alpha = 0.7) +
+  coord_flip() +
+  labs(title = "Top 10 Countries Producing the Most Movies", x = "Country", y = "Movie Count") +
+  theme_minimal()
+
+# 3. Popularity Distribution
+ggplot(df, aes(x = popularity)) +
+  geom_histogram(bins = 20, fill = "green", color = "black", alpha = 0.7) +
+  labs(title = "Popularity Distribution", x = "Popularity", y = "Movie Count") +
+  theme_minimal()
+
+# 4. Award Distribution
+award_data <- df %>%
+  summarise(
+    academy_award = sum(academy_award),
+    academy_nominated = sum(academy_nominated),
+    palme_dor = sum(palme_dor),
+    golden_lion = sum(golden_lion)
+  ) %>%
+  pivot_longer(cols = everything(), names_to = "award", values_to = "count")
+
+ggplot(award_data, aes(x = award, y = count, fill = award)) +
+  geom_bar(stat = "identity", alpha = 0.7) +
+  labs(title = "Distribution of Awards", x = "Award Type", y = "Total Count") +
+  theme_minimal()
+
+# 5. Language Distribution (Top 10 most used languages)
+top_languages <- df %>%
+  count(language, sort = TRUE) %>%
+  top_n(10, n)
+
+ggplot(top_languages, aes(x = reorder(language, n), y = n)) +
+  geom_bar(stat = "identity", fill = "purple", alpha = 0.7) +
+  coord_flip() +
+  labs(title = "Top 10 Most Used Languages", x = "Language", y = "Movie Count") +
+  theme_minimal()
+
+```
+
+```{r}
+library(tidyverse)
+
+df <- df %>%
+  dplyr::select(-year, -country.y, -original_language) %>%
+  rename(country = country.x)
+
+# Get top 10 countries producing the most movies
+top_countries <- df %>%
+  count(country, sort = TRUE) %>%
+  top_n(10, n)
+
+# Bar plot
+ggplot(top_countries, aes(x = reorder(country, n), y = n, fill = country)) +
+  geom_bar(stat = "identity") +
+  coord_flip() +  # Flip axes for readability
+  labs(title = "Top 10 Movie-Producing Countries", x = "Country", y = "Number of Movies") +
+  theme_minimal()
+
+
+```
+
+
+
+```{r}
+# Calculate total awards
+df <- df %>%
+  mutate(total_awards = academy_award + academy_nominated + palme_dor + golden_lion)
+
+# Scatter plot
+ggplot(df, aes(x = popularity, y = total_awards)) +
+  geom_point(alpha = 0.6, color = "purple") +
+  geom_smooth(method = "lm", color = "red", se = FALSE) +  # Regression line
+  labs(title = "Popularity vs. Awards", x = "Popularity", y = "Total Awards") +
+  theme_minimal()
+
+```
+
+```{r}
+
+library(tidytext)  
+library(ggwordcloud)  
+library(dplyr)  
+library(ggplot2)
+library(stopwords)
+
+word_data <- df %>%
+  filter(!is.na(title)) %>%
+  unnest_tokens(word, title) %>%
+  count(word, sort = TRUE) %>%
+  filter(n > 5)  # Keep words appearing more than 5 times
+
+# Remove stop words (English and other common words)
+word_data <- word_data %>%
+  filter(!word %in% stopwords("en"))  # Remove common English stop words
+
+# Improved Word Cloud
+ggplot(word_data, aes(label = word, size = n, color = n)) +
+  geom_text_wordcloud() +
+  scale_color_viridis_c() +
+  labs(title = "Most Common Words in Movie Titles ") +
+  theme_minimal()
+
+```
+
+```{r}
+library(igraph)
+library(ggraph)
+library(tidyverse)
+library(scales)
+
+
+
+df_countries <- df %>%
+  select(title, country) %>%
+  filter(!is.na(country)) %>%
+  separate_rows(country, sep = ",")  # Adjust separator if needed
+
+# Generate country pairs for each movie
+edges <- df_countries %>%
+  group_by(title) %>%
+  summarise(country_pairs = list(combn(unique(country), 2, simplify = FALSE))) %>%
+  unnest(country_pairs) %>%
+  mutate(from = map_chr(country_pairs, 1), 
+         to = map_chr(country_pairs, 2)) %>%
+  select(from, to) %>%
+  count(from, to, sort = TRUE) %>%
+  rename(weight = n)  # Rename 'n' to 'weight' for edge thickness
+
+# Create graph object
+country_graph <- graph_from_data_frame(edges, directed = FALSE)
+
+# Calculate node size based on total collaborations
+node_sizes <- data.frame(name = V(country_graph)$name) %>%
+  left_join(edges %>% 
+              group_by(from) %>% 
+              summarise(size = sum(weight)), 
+            by = c("name" = "from")) %>%
+  replace_na(list(size = 1))  # Replace missing values with 1
+
+# Enhanced network graph visualization
+ggraph(country_graph, layout = "fr") +  
+  geom_edge_link(aes(edge_width = weight, alpha = weight), color = "gray") +  
+    scale_edge_width(range = c(0.5, 5), trans = "log10") +  # Proper log-scaling
+  geom_node_point(aes(size = node_sizes$size), color = "darkblue") +  
+  geom_node_text(aes(label = name), repel = TRUE, size = 5, fontface = "bold") +  
+  theme_void() +  
+  labs(title = "Enhanced Movie Co-Production Network",
+       subtitle = "Edge thickness represents number of collaborations",
+       edge_width = "Co-Productions")
+
+```
+
+
+
+
+
 
