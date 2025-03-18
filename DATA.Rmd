@@ -9,40 +9,26 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-
-## MARVIN'S CODE:
+## Necessary Libraries
 
 ```{r}
+library(scrapex)
 library(dotenv)
-load_dot_env("api_key_au.env")
-
-api_key <- Sys.getenv("API_KEY")
-
-
+library(httr)
+library(jsonlite)
+library(furrr)
+library(tidyverse)
+library(future)
 ```
 
+
+## API SETUP:
+
 ```{r}
-# Function to get API keys from environment variables
-get_api_keys <- function() {
-  # Get all environment variables
-  all_env <- Sys.getenv()
+usethis::edit_r_environ()
 
-  # Filter for Alpha Vantage keys
-  key_names <- grep("^ALPHA_VANTAGE_KEY_", names(all_env), value = TRUE)
+api_key <- Sys.getenv("api_key")
 
-  # Extract the values
-  api_keys <- sapply(key_names, function(key) Sys.getenv(key))
-
-  # Filter out empty keys
-  api_keys <- api_keys[api_keys != ""]
-
-  if (length(api_keys) == 0) {
-    stop("No Alpha Vantage API keys found in environment variables. Please check your .env file.")
-  }
-
-  cat("Found", length(api_keys), "API keys in environment variables\n")
-  return(api_keys)
-}
 ```
 
 
@@ -51,7 +37,6 @@ STEP 1: Fetch Top 50 Movies Per Language
 STEP 2: Fetch Popularity by Country
 
 ```{r}
-
 
 # ✅ Enable parallel processing (4 workers)
 plan(multisession, workers = 4)
@@ -161,7 +146,6 @@ write.csv(all_movies_popularity, "movies_with_popularity.csv", row.names = FALSE
 
 print(dim(all_movies_popularity))  
 head(all_movies_popularity)
-
 
 
 ```
