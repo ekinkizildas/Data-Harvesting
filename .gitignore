@@ -3,3 +3,9 @@
 .RData
 .Ruserdata
 .DS_Store
+movies_with_regional_release_dates.csv
+optimized_movies.csv
+oscar_winning_films.csv
+venice_film_festival_winners.csv
+.Rhistory
+.Rhistory
