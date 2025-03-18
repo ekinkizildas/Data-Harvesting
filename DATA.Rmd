@@ -19,11 +19,12 @@ library(jsonlite)
 library(furrr)
 library(tidyverse)
 library(future)
-library(httr)
-library(jsonlite)
 library(tibble)
-library(furrr)
 library(dplyr)
+library(fuzzyjoin)
+library(rvest)
+library(stringr)
+
 ```
 
 
@@ -36,85 +37,10 @@ api_key <- Sys.getenv("api_key")
 
 ```
 
-## NEW SCRAPING
+## SCRAPING
 scrapes for the movie id, title, year of release, popularity score, original language, poster
 
 ```{r}
-
-
-# ✅ Enable parallel processing (4 workers)
-plan(multisession, workers = 4)
-
-# ✅ Define time range
-start_year <- 2000
-end_year <- as.numeric(format(Sys.Date(), "%Y"))
-
-# ✅ Define selected languages
-languages <- c("es", "fr", "de", "tr", "ja", "ru", "zh", "ko", "pt", "hi", "it")
-set.seed(123)
-
-### **STEP 1: Fetch Top 50 Movies Per Language (Faster)**
-fetch_movies_by_language <- function(lang) {
-  movies_list <- list()
-
-  for (page in 1:2) {  # ✅ Limit to first 2 pages (~50 movies per language)
-    movie_url <- paste0("https://api.themoviedb.org/3/discover/movie?api_key=", api_key,
-                        "&sort_by=popularity.desc",
-                        "&primary_release_date.gte=", start_year, "-01-01",
-                        "&primary_release_date.lte=", end_year, "-12-31",
-                        "&vote_count.gte=500",
-                        "&with_original_language=", lang,
-                        "&page=", page)
-
-    response <- tryCatch({
-      GET(movie_url, timeout(10))
-    }, error = function(e) NULL)
-
-    Sys.sleep(runif(1, 1, 2))  # ✅ Shorter delay (1-2 sec)
-
-    if (!is.null(response) && status_code(response) == 200) {
-      movies <- fromJSON(content(response, "text", encoding = "UTF-8"))$results
-
-      if (!is.null(movies) && length(movies) > 0) {
-        movie_df <- tibble(
-          movie_id = movies$id,
-          title = movies$title,
-          release_year = substr(movies$release_date, 1, 4),
-          popularity = movies$popularity,
-          original_language = movies$original_language,
-          poster_path = paste0("https://image.tmdb.org/t/p/w500", movies$poster_path)
-        )
-        movies_list <- append(movies_list, list(movie_df))
-      }
-    }
-  }
-
-  if (length(movies_list) > 0) {
-    return(bind_rows(movies_list))
-  } else {
-    return(NULL)
-  }
-}
-
-# ✅ Fetch movies in parallel
-all_movies <- future_map_dfr(languages, fetch_movies_by_language, .options = furrr_options(seed = TRUE))
-
-#  Save movies dataset
-write.csv(all_movies, "optimized_movies.csv", row.names = FALSE)
-
-print(dim(all_movies))
-head(all_movies)
-
-```
-
-
-
-```{r}
-library(httr)
-library(jsonlite)
-library(dplyr)
-library(furrr)
-
 # ✅ Enable parallel processing (4 workers)
 plan(multisession, workers = 4)
 
@@ -220,13 +146,9 @@ print(dim(all_movies_regional_release_dates))
 head(all_movies_regional_release_dates)
 ```
 
-```{r}
-library(httr)
-library(jsonlite)
-library(tibble)
-library(furrr)
-library(dplyr)
 
+scrapes also for the release date
+```{r}
 # ✅ Enable parallel processing (4 workers)
 plan(multisession, workers = 4)
 
@@ -290,9 +212,10 @@ print(dim(all_movies))
 head(all_movies)
 ```
 
-```{r}
 
-library(fuzzyjoin)
+## Join the 2 datasets from TMDB
+
+```{r}
 
 merged_df <- stringdist_inner_join(all_movies, all_movies_regional_release_dates, 
                                    by = "title", max_dist = 2, method = "jw")
@@ -315,10 +238,6 @@ head(merged_df)
 ## Getting Academy Awards
 
 ```{r}
-library(rvest)
-library(scrapex)
-library(rvest)
-library(stringr)
 
 # Wikipedia page URL
 oscar_url <- "https://en.wikipedia.org/wiki/List_of_Academy_Award%E2%80%93winning_films"
@@ -359,10 +278,6 @@ write.csv(oscar_movies_clean, "oscar_winning_films.csv", row.names = FALSE)
 ## Getting Venice's Golden Lions
 
 ```{r} 
-library(scrapex)
-library(rvest)
-library(dplyr)
-library(stringr)
 
 url <- "https://en.wikipedia.org/wiki/Golden_Lion"
 
@@ -400,11 +315,6 @@ write.csv(golden_lion_clean, "venice_film_festival_winners.csv", row.names = FAL
 ## Getting Cannes' Palme D'Or
 
 ```{r} 
-
-# Load necessary libraries
-library(rvest)
-library(dplyr)
-library(stringr)
 
 # Wikipedia page URL for Palme d'Or winners
 url <- "https://en.wikipedia.org/wiki/Palme_d%27Or"
@@ -457,8 +367,6 @@ write.csv(palme_dor_clean, "cannes_film_festival_winners.csv", row.names = FALSE
 1. rename columns
 
 ```{r}
-library(dplyr)
-library(readr)
 
 # Load the datasets
 cannes_winners <- read_csv("cannes_film_festival_winners.csv")
