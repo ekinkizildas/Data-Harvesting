@@ -13,36 +13,49 @@ knitr::opts_chunk$set(echo = TRUE)
 ## MARVIN'S CODE:
 
 ```{r}
-library(dotenv)
-load_dot_env("api_key_au.env")
+#
+# library(dotenv)
+# 
+# 
+# api_key <-"fe3e27a7dc7ff2533c6437f18b07d993"
+# 
+# ```
+# 
+# ```{r}
+# library(scrapex)
+# library(httr)
+# library(jsonlite)
+# library(furrr)
+# library(tidyverse)
+# 
+# ```
+# 
+# 
+# ```{r}
+# dotenv::load_dot_env()
+# 
+# # Function to get API keys from environment variables
+# get_api_keys <- function() {
+#   # Get all environment variables
+#   all_env <- Sys.getenv()
+#   
+#   # Filter for Alpha Vantage keys
+#   key_names <- grep("^ALPHA_VANTAGE_KEY_", names(all_env), value = TRUE)
+#   
+#   # Extract the values
+#   api_keys <- sapply(key_names, function(key) Sys.getenv(key))
+#   
+#   # Filter out empty keys
+#   api_keys <- api_keys[api_keys != ""]
+#   
+#   if (length(api_keys) == 0) {
+#     stop("No Alpha Vantage API keys found in environment variables. Please check your .env file.")
+#   }
+#   
+#   cat("Found", length(api_keys), "API keys in environment variables\n")
+#   return(api_keys)
+# }
 
-api_key <- Sys.getenv("API_KEY")
-
-
-```
-
-```{r}
-# Function to get API keys from environment variables
-get_api_keys <- function() {
-  # Get all environment variables
-  all_env <- Sys.getenv()
-
-  # Filter for Alpha Vantage keys
-  key_names <- grep("^ALPHA_VANTAGE_KEY_", names(all_env), value = TRUE)
-
-  # Extract the values
-  api_keys <- sapply(key_names, function(key) Sys.getenv(key))
-
-  # Filter out empty keys
-  api_keys <- api_keys[api_keys != ""]
-
-  if (length(api_keys) == 0) {
-    stop("No Alpha Vantage API keys found in environment variables. Please check your .env file.")
-  }
-
-  cat("Found", length(api_keys), "API keys in environment variables\n")
-  return(api_keys)
-}
 ```
 
 
