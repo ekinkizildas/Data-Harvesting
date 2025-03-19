@@ -532,17 +532,18 @@ library(scales)
 library(networkD3)
 library(stats)
 library(highcharter)
+library(tidyr)
+library(RColorBrewer)
 
 ```
 
 
 ## Ekin
 
+#### 1. Number of Movies by Year
+
 ```{r}
 final_data <- read.csv("final_data.csv")
-
-
-
 
 # 1. Number of Movies by Year
 ggplot(final_data, aes(x = as.factor(release_year))) +
@@ -551,6 +552,11 @@ ggplot(final_data, aes(x = as.factor(release_year))) +
   theme_minimal() +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
+```
+
+### 2. Movie Distribution by Country (Top 10 countries producing the most movies)
+
+```{r}
 # 2. Movie Distribution by Country (Top 10 countries producing the most movies)
 top_countries <-final_data %>%
   count(country, sort = TRUE) %>%
@@ -562,12 +568,22 @@ ggplot(top_countries, aes(x = reorder(country, n), y = n)) +
   labs(title = "Top 10 Countries Producing the Most Movies", x = "Country", y = "Movie Count") +
   theme_minimal()
 
+```
+
+### 3. Popularity Distribution
+
+```{r}
 # 3. Popularity Distribution
 ggplot(final_data, aes(x = popularity)) +
   geom_histogram(bins = 20, fill = "green", color = "black", alpha = 0.7) +
   labs(title = "Popularity Distribution", x = "Popularity", y = "Movie Count") +
   theme_minimal()
 
+```
+
+### 4. Award Distribution
+
+```{r}
 # 4. Award Distribution
 award_data <- final_data%>%
   summarise(
@@ -583,6 +599,11 @@ ggplot(award_data, aes(x = award, y = count, fill = award)) +
   labs(title = "Distribution of Awards", x = "Award Type", y = "Total Count") +
   theme_minimal()
 
+```
+
+### 5. Language Distribution (Top 10 most used languages)
+
+```{r}
 # 5. Language Distribution (Top 10 most used languages)
 top_languages <- final_data%>%
   count(language, sort = TRUE) %>%
@@ -593,15 +614,11 @@ ggplot(top_languages, aes(x = reorder(language, n), y = n)) +
   coord_flip() +
   labs(title = "Top 10 Most Used Languages", x = "Language", y = "Movie Count") +
   theme_minimal()
-
 ```
 
+## top 10 countries producing the most movies
+
 ```{r}
-
-
-
-
-
 # Get top 10 countries producing the most movies
 top_countries <- final_data %>%
   count(country, sort = TRUE) %>%
@@ -617,7 +634,7 @@ ggplot(top_countries, aes(x = reorder(country, n), y = n, fill = country)) +
 
 ```
 
-
+## Popularity vs. Awards
 
 ```{r}
 # Calculate total awards
@@ -625,7 +642,7 @@ final_data <- final_data %>%
   mutate(total_awards = academy_award + academy_nominated + palme_dor + golden_lion)
 
 # Scatter plot
-ggplot(df, aes(x = popularity, y = total_awards)) +
+ggplot(final_data, aes(x = popularity, y = total_awards)) +
   geom_point(alpha = 0.6, color = "purple") +
   geom_smooth(method = "lm", color = "red", se = FALSE) +  # Regression line
   labs(title = "Popularity vs. Awards", x = "Popularity", y = "Total Awards") +
@@ -633,18 +650,9 @@ ggplot(df, aes(x = popularity, y = total_awards)) +
 
 ```
 
+## Words in Movie Titles
 
 ```{r}
-
-
-
-
-library(tidytext)  
-library(ggwordcloud)  
-library(dplyr)  
-library(ggplot2)
-library(stopwords)
-
 word_data <- final_data %>%
   filter(!is.na(title)) %>%
   unnest_tokens(word, title) %>%
@@ -664,12 +672,32 @@ ggplot(word_data, aes(label = word, size = n, color = n)) +
 
 ```
 
-
+## TO CHECK 
 
 ```{r}
-library(networkD3)
-library(igraph)
+df_pairs <- final_data %>%
+  select(title, country) %>%  
+  group_by(title) %>%
+  summarise(country_pairs = if (n_distinct(country) > 1) {
+    list(combn(unique(country), 2, simplify = FALSE))
+  } else {
+    list(NULL)
+  }) %>%
+  unnest(country_pairs) %>%
+  filter(!is.null(country_pairs)) %>%
+  unnest_wider(country_pairs, names_sep = "_") %>%
+  rename(from = country_pairs_1, to = country_pairs_2) %>%
+  count(from, to, name = "weight")
 
+country_graph <- graph_from_data_frame(df_pairs, directed = FALSE)
+
+
+print(country_graph)
+
+```
+### MISSING THE TITLE
+
+```{r}
 # Veriyi hazırlayalım
 nodes <- data.frame(name = unique(c(df_pairs$from, df_pairs$to)))
 nodes$id <- 0:(nrow(nodes) - 1)
@@ -690,37 +718,9 @@ forceNetwork(Links = as.data.frame(links), Nodes = as.data.frame(nodes),
 
 ```
 
+### TITLE??
 
 ```{r}
-library(dplyr)
-library(tidyr)
-library(igraph)
-library(ggraph)
-df_pairs <- final_data %>%
-  select(title, country) %>%  
-  group_by(title) %>%
-  summarise(country_pairs = if (n_distinct(country) > 1) {
-    list(combn(unique(country), 2, simplify = FALSE))
-  } else {
-    list(NULL)
-  }) %>%
-  unnest(country_pairs) %>%
-  filter(!is.null(country_pairs)) %>%
-  unnest_wider(country_pairs, names_sep = "_") %>%
-  rename(from = country_pairs_1, to = country_pairs_2) %>%
-  count(from, to, name = "weight")
-
-country_graph <- graph_from_data_frame(df_pairs, directed = FALSE)
-
-
-print(country_graph)
-
-
-```
-```{r}
-library(ggraph)
-library(RColorBrewer)
-
 V(country_graph)$degree <- degree(country_graph)
 
 node_colors <- brewer.pal(n = 8, name = "Dark2")
@@ -736,12 +736,9 @@ ggraph(country_graph, layout = "fr") +
 
 ```
 
-
-
 Looking at the visualization, we can see that some countries, like the United States (US), France (FR), and Germany (DE), have larger nodes. This indicates that they are key players in international co-productions, frequently working with multiple other nations. The thickness of the edges reveals which partnerships are the strongest. For example, if there is a thick line between US and FR, it means these two countries have collaborated on many films.
 
 In contrast, some countries, like Brazil (BR) or Italy (IT), have smaller nodes, meaning they are involved in fewer co-productions. They might still play a role in international films but not as frequently as the major hubs. Additionally, some countries may have only a few connections, suggesting that they primarily produce films domestically rather than engaging in frequent international partnerships.
-
 
 
 
