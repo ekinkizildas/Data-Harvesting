@@ -581,26 +581,6 @@ ggplot(final_data, aes(x = popularity)) +
 
 ```
 
-### 4. Award Distribution
-
-```{r}
-# 4. Award Distribution
-award_data <- final_data%>%
-  summarise(
-    academy_award = sum(academy_award),
-    academy_nominated = sum(academy_nominated),
-    palme_dor = sum(palme_dor),
-    golden_lion = sum(golden_lion)
-  ) %>%
-  pivot_longer(cols = everything(), names_to = "award", values_to = "count")
-
-ggplot(award_data, aes(x = award, y = count, fill = award)) +
-  geom_bar(stat = "identity", alpha = 0.7) +
-  labs(title = "Distribution of Awards", x = "Award Type", y = "Total Count") +
-  theme_minimal()
-
-```
-
 ### 5. Language Distribution (Top 10 most used languages)
 
 ```{r}
@@ -614,24 +594,6 @@ ggplot(top_languages, aes(x = reorder(language, n), y = n)) +
   coord_flip() +
   labs(title = "Top 10 Most Used Languages", x = "Language", y = "Movie Count") +
   theme_minimal()
-```
-
-## top 10 countries producing the most movies
-
-```{r}
-# Get top 10 countries producing the most movies
-top_countries <- final_data %>%
-  count(country, sort = TRUE) %>%
-  top_n(10, n)
-
-# Bar plot
-ggplot(top_countries, aes(x = reorder(country, n), y = n, fill = country)) +
-  geom_bar(stat = "identity") +
-  coord_flip() +  # Flip axes for readability
-  labs(title = "Top 10 Movie-Producing Countries", x = "Country", y = "Number of Movies") +
-  theme_minimal()
-
-
 ```
 
 ## Popularity vs. Awards
@@ -854,8 +816,6 @@ highchart() %>%
 
 ```
 
-## !!! Awards vs Popularity
 
-## Heatmap of Awards and Popularity 
 
 
