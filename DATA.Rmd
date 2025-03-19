@@ -483,6 +483,23 @@ final_data <- final_data %>%
 
 ```
 
+```{r}
+# Rename 'title.x' and 'title.y' to 'title' for consistency
+merged_data <- merged_data %>%
+  rename(title = title.x) %>%
+  select(-title.y)  # Remove 'title.y' as it's redundant
+
+# Merge the datasets on the 'title' column
+final_data <- merged_data %>%
+  left_join(merged_data_awards, by = "title")
+
+# Deal with NAs in awards variables
+final_data <- final_data %>%
+  mutate(across(c(academy_award, academy_nominated, palme_dor, golden_lion), ~ replace(., is.na(.), 0)))
+
+```
+
+
 delete year & country.y columns & renames country
 
 ```{r}
@@ -494,8 +511,6 @@ final_data <- final_data %>%
 ## Export
 
 ```{r}
-
-
 write.csv(final_data, "final_data.csv")
 
 ```
