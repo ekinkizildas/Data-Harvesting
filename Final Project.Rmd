@@ -552,7 +552,7 @@ final_data <- read.csv("final_data.csv")
 
 # 1. Number of Movies by Year
 ggplot(final_data, aes(x = as.factor(release_year))) +
-  geom_bar(fill = "blue", alpha = 0.7) +
+  geom_bar(fill = "purple", alpha = 0.7) +
   labs(title = "Number of Movies by Year", x = "Release Year", y = "Movie Count") +
   theme_minimal() +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
@@ -676,104 +676,45 @@ print(country_graph)
 
 
 ```{r}
-library(networkD3)
+
+
+
+library(circlize)
 library(dplyr)
 
-# ✅ Create Nodes DataFrame
-nodes <- data.frame(name = unique(c(df_pairs$from, df_pairs$to)))
-nodes$id <- 0:(nrow(nodes) - 1)
+# Prepare the dataset for the chord diagram
+df_chord <- df_pairs %>%
+  select(from, to, weight) %>%
+  rename(source = from, target = to, value = weight)  # Standardize column names
 
-# ✅ Create Links DataFrame
-links <- df_pairs %>%
-  left_join(nodes, by = c("from" = "name")) %>%
-  rename(source = id) %>%
-  left_join(nodes, by = c("to" = "name")) %>%
-  rename(target = id) %>%
-  mutate(value = weight)
+# Define custom country colors
+country_colors <- c("US" = "blue", "FR" = "orange", "DE" = "green",
+                    "GB" = "red", "ES" = "purple", "IT" = "brown",
+                    "JP" = "pink", "BR" = "gray", "TR" = "yellow",
+                    "IN" = "cyan")
 
-# ✅ Define Country Colors (d3 color scale)
-color_scale <- 'd3.scaleOrdinal()
-  .domain(["US", "FR", "DE", "GB", "ES", "IT", "JP", "BR", "TR", "IN"])
-  .range(["#1f77b4", "#ff7f0e", "#2ca02c", "#d62728", "#9467bd", 
-          "#8c564b", "#e377c2", "#7f7f7f", "#bcbd22", "#17becf"])'
+# Create the chord diagram
+chordDiagram(df_chord, 
+             transparency = 0.4,  # Slight transparency for better readability
+             grid.col = country_colors,  # Assign custom colors to countries
+             annotationTrack = "grid",  # Show country labels
+             preAllocateTracks = list(track.height = 0.1))  # Reserve space for labels
 
-# ✅ Create the Force Network
-network <- forceNetwork(Links = as.data.frame(links), 
-                        Nodes = as.data.frame(nodes),
-                        Source = "source", 
-                        Target = "target",
-                        NodeID = "name", 
-                        Value = "value",
-                        Group = "name", 
-                        opacity = 0.8,
-                        zoom = TRUE, 
-                        fontSize = 14,
-                        linkDistance = 150,
-                        charge = -500,
-                        bounded = TRUE,
-                        width = 1000, height = 800,
-                        colourScale = JS(color_scale))
+# Add title with improved formatting
+title("Movie Co-Production Chord Diagram", 
+      cex.main = 1.5, font.main = 1.5, col.main = "darkblue")
 
-# ✅ JavaScript for Adding Legend (Fixing the Syntax)
-legend_script <- JS('
-function addLegend(svg) {
-  var legendData = [
-    {name: "US", color: "#1f77b4"},
-    {name: "FR", color: "#ff7f0e"},
-    {name: "DE", color: "#2ca02c"},
-    {name: "GB", color: "#d62728"},
-    {name: "ES", color: "#9467bd"},
-    {name: "IT", color: "#8c564b"},
-    {name: "JP", color: "#e377c2"},
-    {name: "BR", color: "#7f7f7f"},
-    {name: "TR", color: "#bcbd22"},
-    {name: "IN", color: "#17becf"}
-  ];
-
-  var legend = svg.append("g")
-    .attr("transform", "translate(20,20)");  // Legend position
-
-  legend.selectAll("rect")
-    .data(legendData)
-    .enter()
-    .append("rect")
-    .attr("x", 10)
-    .attr("y", function(d, i) { return i * 20; })
-    .attr("width", 15)
-    .attr("height", 15)
-    .style("fill", function(d) { return d.color; });
-
-  legend.selectAll("text")
-    .data(legendData)
-    .enter()
-    .append("text")
-    .attr("x", 30)
-    .attr("y", function(d, i) { return i * 20 + 12; })
-    .text(function(d) { return d.name; })
-    .style("font-size", "14px")
-    .attr("alignment-baseline", "middle");
-}
-')
-
-# Attach Legend to Network
-network$x$options$script <- legend_script
-
-# ender the Network Graph with Legend
-network
-
-
-
-
-
-
+ #Add a legend without a border
+legend("topright", legend = names(country_colors),  # Country names
+       fill = country_colors,  # Corresponding colors
+       cex = 0.8,  # Adjust text size
+       title = "Country Colors", title.col = "darkblue",
+       bty = "n", # Remove legend border
+       inset = c(0, -0.05),  # 🔽 Move the legend slightly down
+       y.intersp = 1.3)  # 🔽 Increase spacing between items
 ```
 
-Looking at the visualization, we can see that some countries, like the United States (US), France (FR), and Germany (DE), have larger nodes. This indicates that they are key players in international co-productions, frequently working with multiple other nations. The thickness of the edges reveals which partnerships are the strongest. For example, if there is a thick line between US and FR, it means these two countries have collaborated on many films.
-
-In contrast, some countries, like Brazil (BR) or Italy (IT), have smaller nodes, meaning they are involved in fewer co-productions. They might still play a role in international films but not as frequently as the major hubs. Additionally, some countries may have only a few connections, suggesting that they primarily produce films domestically rather than engaging in frequent international partnerships.
-
-
-
+This **Movie Co-Production Chord Diagram** shows international film collaborations, with each country assigned a unique color. Thicker links indicate stronger partnerships. The **US, France, and Germany** are the most connected, highlighting their major role in global productions. Other countries like **Spain, Italy, and the UK** also show significant collaborations, while **Turkey and India** have fewer but notable connections. The diagram effectively illustrates the global nature of co-productions in the film industry.
 
 ## Au
 
