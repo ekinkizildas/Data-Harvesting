@@ -9,6 +9,7 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+# SCRAPING AND WORKING ON THE DATASET
 ## Necessary Libraries
 
 ```{r}
@@ -26,7 +27,6 @@ library(rvest)
 library(stringr)
 
 ```
-
 
 ## API SETUP:
 
@@ -147,7 +147,6 @@ print(dim(all_movies_regional_release_dates))
 head(all_movies_regional_release_dates)
 ```
 
-
 scrapes also for the release date
 ```{r}
 
@@ -215,7 +214,6 @@ print(dim(all_movies))
 head(all_movies)
 ```
 
-
 ## Join the 2 datasets from TMDB
 
 ```{r}
@@ -237,8 +235,7 @@ head(merged_df)
 
 ```
 
-
-## Getting Academy Awards
+## Scraping for the Academy Awards
 
 ```{r}
 
@@ -277,8 +274,7 @@ write.csv(oscar_movies_clean, "oscar_winning_films.csv", row.names = FALSE)
 
 ```
 
-
-## Getting Venice's Golden Lions
+## Scraping for Venice's Golden Lions
 
 ```{r} 
 
@@ -314,8 +310,7 @@ write.csv(golden_lion_clean, "venice_film_festival_winners.csv", row.names = FAL
 
 ```
 
-
-## Getting Cannes' Palme D'Or
+## Scraping for Cannes' Palme D'Or
 
 ```{r} 
 
@@ -363,7 +358,6 @@ print(head(palme_dor_clean, 10))
 write.csv(palme_dor_clean, "cannes_film_festival_winners.csv", row.names = FALSE)
 
 ```
-
 
 ## Merging the Awards Datasets
 
@@ -439,7 +433,6 @@ merged_data <- merged_data %>%
 
 ```
 
-
 3. delete original_title & director columns
 
 ```{r}
@@ -456,7 +449,7 @@ merged_data <- merged_data %>%
 
 ```
 
-5. SAVE EVERYTHING:
+5. Save everything
 
 ```{r}
 # Save the resulting dataset to a CSV file
@@ -464,7 +457,7 @@ write.csv(merged_data, "merged_awards_data.csv", row.names = FALSE)
 
 ```
 
-## MERGING THE WHOLE DATASET
+## Merging the whole dataset
 
 ```{r}
 
@@ -487,7 +480,7 @@ final_data <- final_data %>%
 
 ```
 
-export
+## Export
 
 ```{r}
 
@@ -496,14 +489,33 @@ write.csv(final_data, "final_data.csv")
 
 ```
 
-# EKIN VIZ
+# ANALYSIS & VISUALIZATIONS
+
+## Necessary Libraries
+
+```{r}
+library(tidyverse)
+library(tidytext)  
+library(ggwordcloud)  
+library(dplyr)  
+library(ggplot2)
+library(stopwords)
+library(igraph)
+library(ggraph)
+library(scales)
+library(networkD3)
+library(imager)
+library(stats)
+library(highcharter)
+
+```
+
+
+## Ekin
 
 ```{r}
 df <- read.csv("final_data.csv")
 
-
-
-library(tidyverse)
 
 # 1. Number of Movies by Year
 ggplot(df, aes(x = as.factor(release_year))) +
@@ -558,8 +570,6 @@ ggplot(top_languages, aes(x = reorder(language, n), y = n)) +
 ```
 
 ```{r}
-library(tidyverse)
-
 df <- df %>%
   dplyr::select(-year, -country.y, -original_language) %>%
   rename(country = country.x)
@@ -596,13 +606,6 @@ ggplot(df, aes(x = popularity, y = total_awards)) +
 ```
 
 ```{r}
-
-library(tidytext)  
-library(ggwordcloud)  
-library(dplyr)  
-library(ggplot2)
-library(stopwords)
-
 word_data <- df %>%
   filter(!is.na(title)) %>%
   unnest_tokens(word, title) %>%
@@ -623,13 +626,6 @@ ggplot(word_data, aes(label = word, size = n, color = n)) +
 ```
 
 ```{r}
-library(igraph)
-library(ggraph)
-library(tidyverse)
-library(scales)
-
-
-
 df_countries <- df %>%
   select(title, country) %>%
   filter(!is.na(country)) %>%
@@ -714,14 +710,7 @@ print("Downloaded")
 
 
 
-
 ```{r}
-
-library(imager)
-library(stats)
-library(ggplot2)
-
-
 
 poster_folder <- "posters/"
 poster_files <- list.files(poster_folder, full.names = TRUE)
@@ -755,8 +744,6 @@ print(all_dominant_colors)
 
 
 ```{r}
-library(networkD3)
-
 language_colors_grouped <- language_colors_grouped %>%
   group_by(language) %>%
   summarise(r = mean(r), g = mean(g), b = mean(b), hex = first(hex), .groups = "drop")
@@ -953,15 +940,7 @@ ggplot(rare_colors, aes(x = reorder(hex, n), y = n, fill = hex)) +
 ```
 
 
-# AU VIZ
-## libraries
-
-```{r}
-# Load necessary libraries
-library(dplyr)
-library(highcharter)
-```
-
+## Au
 
 ## Preparing the data
 
