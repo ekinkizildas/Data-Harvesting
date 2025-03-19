@@ -776,7 +776,6 @@ ggplot(language_colors_grouped, aes(x = reorder(language, -r), y = 1, fill = hex
 ```{r}
 
 
-# Poster klasörünü belirleyelim
 poster_folder <- "posters/"
 poster_files <- list.files(poster_folder, full.names = TRUE)
 
