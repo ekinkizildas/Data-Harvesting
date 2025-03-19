@@ -165,6 +165,9 @@ head(all_movies_regional_release_dates)
 
 ```
 
+It sets up reproducible parallel processing to retrieve the top 50 movies for specified languages from 2000 to the current year. The script defines a function to fetch movie data efficiently using API requests, filtering by popularity, release year, and vote count. It leverages parallel processing to speed up data retrieval across multiple languages and compiles the results into a structured data frame. Finally, the script validates the collected data, saves the movie information to a CSV file, and prints the dataset’s dimensions along with a preview of the retrieved data.
+
+
 ```{r}
 set.seed(123)
 # Enable parallel processing (4 workers)
@@ -542,6 +545,8 @@ library(RColorBrewer)
 
 #### 1. Number of Movies by Year
 
+This bar chart displays the **number of movies released per year** from 2000 to 2024. The **x-axis represents the release year**, while the **y-axis shows the number of movies**. The trend suggests an **increase in movie production over time**, with a significant peak in 2023. There are some fluctuations, but overall, more movies have been released in recent years compared to the early 2000s.
+
 ```{r}
 final_data <- read.csv("final_data.csv")
 
@@ -556,6 +561,8 @@ ggplot(final_data, aes(x = as.factor(release_year))) +
 
 ### 2. Movie Distribution by Country (Top 10 countries producing the most movies)
 
+This bar chart displays the **top 10 countries that have produced the most movies**. The **y-axis represents the countries**, while the **x-axis shows the number of movies** produced. France (**FR**) leads as the **top movie-producing country**, followed closely by the **United States (US)**. Germany (**DE**), the United Kingdom (**GB**), and Spain (**ES**) also have significant movie production. The chart highlights that European countries dominate the list, with **Turkey (TR) and India (IN)** contributing fewer films compared to the others.
+
 ```{r}
 # 2. Movie Distribution by Country (Top 10 countries producing the most movies)
 top_countries <-final_data %>%
@@ -563,7 +570,7 @@ top_countries <-final_data %>%
   top_n(10, n)
 
 ggplot(top_countries, aes(x = reorder(country, n), y = n)) +
-  geom_bar(stat = "identity", fill = "red", alpha = 0.7) +
+  geom_bar(stat = "identity", fill = "purple", alpha = 0.7) +
   coord_flip() +
   labs(title = "Top 10 Countries Producing the Most Movies", x = "Country", y = "Movie Count") +
   theme_minimal()
@@ -572,16 +579,20 @@ ggplot(top_countries, aes(x = reorder(country, n), y = n)) +
 
 ### 3. Popularity Distribution
 
+This histogram illustrates the **distribution of movie popularity scores**. The **x-axis represents popularity scores**, while the **y-axis indicates the number of movies** in each range. Most movies have a popularity score between **3 and 4**, with a significant concentration in this range. There are very few movies with popularity scores **below 2 or above 6**, indicating that extreme popularity scores are rare in this dataset.
+
 ```{r}
 # 3. Popularity Distribution
 ggplot(final_data, aes(x = popularity)) +
-  geom_histogram(bins = 20, fill = "green", color = "black", alpha = 0.7) +
+  geom_histogram(bins = 20, fill = "purple", color = "black", alpha = 0.7) +
   labs(title = "Popularity Distribution", x = "Popularity", y = "Movie Count") +
   theme_minimal()
 
 ```
 
 ### 5. Language Distribution (Top 10 most used languages)
+
+This bar chart shows the **top 10 most used languages in movie production**. The **y-axis lists the languages**, while the **x-axis represents the number of movies** produced in each language. **Japanese (ja)** leads as the most frequently used language, followed by **French (fr) and Spanish (es)**. Other widely used languages include **Korean (ko), Italian (it), and German (de)**. The chart highlights a strong presence of **European and Asian languages** in movie production, with **Hindi (hi) having the lowest count among the top 10**.
 
 ```{r}
 # 5. Language Distribution (Top 10 most used languages)
@@ -597,6 +608,8 @@ ggplot(top_languages, aes(x = reorder(language, n), y = n)) +
 ```
 
 ## Popularity vs. Awards
+
+This scatter plot visualizes the relationship between **movie popularity** (x-axis) and **total awards won** (y-axis). Each **purple dot** represents a movie, while the **red line** indicates the trend. The **positive slope of the red line** suggests a weak but **positive correlation** between popularity and the number of awards—more popular movies tend to win more awards. However, many movies with high popularity have won **zero awards**, indicating that popularity alone does not guarantee recognition. Additionally, there are some inconsistencies, such as movies with low popularity receiving awards.
 
 ```{r}
 # Calculate total awards
@@ -614,6 +627,9 @@ ggplot(final_data, aes(x = popularity, y = total_awards)) +
 
 ## Words in Movie Titles
 
+This word cloud visualizes the most common words in movie titles, with larger words appearing more frequently. Key terms like *movie, boy, close, rec, dragon,* and *naruto* stand out, suggesting recurring themes in film titles. The distribution is well-balanced, though some words may still be overlapping due to spacing constraints. The variation in colors helps distinguish word frequency levels. Overall, this visualization provides a quick insight into popular naming patterns in movies.
+
+
 ```{r}
 word_data <- final_data %>%
   filter(!is.na(title)) %>%
@@ -627,7 +643,7 @@ word_data <- word_data %>%
 
 # Improved Word Cloud
 ggplot(word_data, aes(label = word, size = n, color = n)) +
-  geom_text_wordcloud() +
+  geom_text_wordcloud(area_corr = TRUE) +
   scale_color_viridis_c() +
   labs(title = "Most Common Words in Movie Titles ") +
   theme_minimal()
@@ -657,13 +673,17 @@ country_graph <- graph_from_data_frame(df_pairs, directed = FALSE)
 print(country_graph)
 
 ```
-### MISSING THE TITLE
+
 
 ```{r}
-# Veriyi hazırlayalım
+library(networkD3)
+library(dplyr)
+
+# ✅ Create Nodes DataFrame
 nodes <- data.frame(name = unique(c(df_pairs$from, df_pairs$to)))
 nodes$id <- 0:(nrow(nodes) - 1)
 
+# ✅ Create Links DataFrame
 links <- df_pairs %>%
   left_join(nodes, by = c("from" = "name")) %>%
   rename(source = id) %>%
@@ -671,36 +691,87 @@ links <- df_pairs %>%
   rename(target = id) %>%
   mutate(value = weight)
 
-forceNetwork(Links = as.data.frame(links), Nodes = as.data.frame(nodes), 
-             Source = "source", Target = "target", 
-             NodeID = "name", Value = "value", 
-             Group = "name", opacity = 0.9, 
-             zoom = TRUE, fontSize = 12)
+# ✅ Define Country Colors (d3 color scale)
+color_scale <- 'd3.scaleOrdinal()
+  .domain(["US", "FR", "DE", "GB", "ES", "IT", "JP", "BR", "TR", "IN"])
+  .range(["#1f77b4", "#ff7f0e", "#2ca02c", "#d62728", "#9467bd", 
+          "#8c564b", "#e377c2", "#7f7f7f", "#bcbd22", "#17becf"])'
+
+# ✅ Create the Force Network
+network <- forceNetwork(Links = as.data.frame(links), 
+                        Nodes = as.data.frame(nodes),
+                        Source = "source", 
+                        Target = "target",
+                        NodeID = "name", 
+                        Value = "value",
+                        Group = "name", 
+                        opacity = 0.8,
+                        zoom = TRUE, 
+                        fontSize = 14,
+                        linkDistance = 150,
+                        charge = -500,
+                        bounded = TRUE,
+                        width = 1000, height = 800,
+                        colourScale = JS(color_scale))
+
+# ✅ JavaScript for Adding Legend (Fixing the Syntax)
+legend_script <- JS('
+function addLegend(svg) {
+  var legendData = [
+    {name: "US", color: "#1f77b4"},
+    {name: "FR", color: "#ff7f0e"},
+    {name: "DE", color: "#2ca02c"},
+    {name: "GB", color: "#d62728"},
+    {name: "ES", color: "#9467bd"},
+    {name: "IT", color: "#8c564b"},
+    {name: "JP", color: "#e377c2"},
+    {name: "BR", color: "#7f7f7f"},
+    {name: "TR", color: "#bcbd22"},
+    {name: "IN", color: "#17becf"}
+  ];
+
+  var legend = svg.append("g")
+    .attr("transform", "translate(20,20)");  // Legend position
+
+  legend.selectAll("rect")
+    .data(legendData)
+    .enter()
+    .append("rect")
+    .attr("x", 10)
+    .attr("y", function(d, i) { return i * 20; })
+    .attr("width", 15)
+    .attr("height", 15)
+    .style("fill", function(d) { return d.color; });
+
+  legend.selectAll("text")
+    .data(legendData)
+    .enter()
+    .append("text")
+    .attr("x", 30)
+    .attr("y", function(d, i) { return i * 20 + 12; })
+    .text(function(d) { return d.name; })
+    .style("font-size", "14px")
+    .attr("alignment-baseline", "middle");
+}
+')
+
+# Attach Legend to Network
+network$x$options$script <- legend_script
+
+# ender the Network Graph with Legend
+network
 
 
-```
 
-### TITLE??
 
-```{r}
-V(country_graph)$degree <- degree(country_graph)
 
-node_colors <- brewer.pal(n = 8, name = "Dark2")
-
-ggraph(country_graph, layout = "fr") +  
-  geom_edge_link(aes(edge_width = weight, alpha = weight), color = "gray") +  
-  scale_edge_width(range = c(0.5, 5), trans = "log10") +  
-  scale_edge_alpha(range = c(0.3, 1)) +  
-  geom_node_point(aes(size = V(country_graph)$degree, color = as.factor(V(country_graph)$degree))) +  
-  scale_color_manual(values = node_colors) +  
-  geom_node_text(aes(label = name), repel = TRUE, size = 6, fontface = "bold") +  
-  theme_void()
 
 ```
 
 Looking at the visualization, we can see that some countries, like the United States (US), France (FR), and Germany (DE), have larger nodes. This indicates that they are key players in international co-productions, frequently working with multiple other nations. The thickness of the edges reveals which partnerships are the strongest. For example, if there is a thick line between US and FR, it means these two countries have collaborated on many films.
 
 In contrast, some countries, like Brazil (BR) or Italy (IT), have smaller nodes, meaning they are involved in fewer co-productions. They might still play a role in international films but not as frequently as the major hubs. Additionally, some countries may have only a few connections, suggesting that they primarily produce films domestically rather than engaging in frequent international partnerships.
+
 
 
 
