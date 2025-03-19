@@ -214,26 +214,36 @@ print(dim(all_movies))
 head(all_movies)
 ```
 
-## Join the 2 datasets from TMDB
+## Join the 2 datasets from TMDB (UPDATED!!!)
 
 ```{r}
+# Load necessary libraries
+library(dplyr)
 
-merged_df <- stringdist_inner_join(all_movies, all_movies_regional_release_dates, 
-                                   by = "title", max_dist = 2, method = "jw")
+# Assuming all_movies_regional_release_dates and all_movies are already loaded
 
-# View result
-print(dim(merged_df))
-head(merged_df)
+# Rename the 'language' column to 'original_language' for consistency
+all_movies_regional_release_dates <- all_movies_regional_release_dates %>%
+  rename(original_language = language)
 
+# Merge the datasets on the 'movie_id' column
+merged_data <- all_movies %>%
+  left_join(all_movies_regional_release_dates, by = "movie_id")
 
-merged_df<- merged_df %>%
-  select(movie_id = movie_id.x, title = title.x, release_year, popularity, 
-         original_language, poster_path, language, country, release_date)
+# Select the columns you want to keep in the final dataset
+# For example, you might want to keep one of the 'original_language' columns
+merged_data <- merged_data %>%
+  select(movie_id, title.x, release_year, popularity, original_language = original_language.x, poster_path, country, release_date)
 
+# Rename the 'title' column 
+merged_data <- merged_data %>%
+  rename(title = title.x)
 
-head(merged_df)
+# Print the first few rows of the merged dataset to verify
+print(head(merged_data))
 
 ```
+
 
 ## Scraping for the Academy Awards
 
@@ -411,7 +421,7 @@ oscar_winners <- oscar_winners %>%
 
 # Merge the datasets
 # First, merge Oscar winners with Cannes winners
-merged_data <- full_join(oscar_winners, cannes_winners, by = c("title", "year")) %>%
+merged_data_awards <- full_join(oscar_winners, cannes_winners, by = c("title", "year")) %>%
   mutate(
     academy_award = ifelse(is.na(academy_award), 0, academy_award),
     academy_nominated = ifelse(is.na(academy_nominated), 0, academy_nominated),
@@ -419,16 +429,16 @@ merged_data <- full_join(oscar_winners, cannes_winners, by = c("title", "year"))
   )
 
 # Next, merge the result with Venice winners
-merged_data <- full_join(merged_data, venice_winners, by = c("title", "year")) %>%
+merged_data_awards <- full_join(merged_data_awards, venice_winners, by = c("title", "year")) %>%
   mutate(
     golden_lion = ifelse(is.na(golden_lion), 0, golden_lion)
   )
 
 # Print the resulting dataset
-print(merged_data)
+print(merged_data_awards)
 
 # Filter the dataset to include only movies from 2000 to 2025
-merged_data <- merged_data %>%
+merged_data_awards <- merged_data_awards %>%
   filter(year >= 2000 & year <= 2025)
 
 ```
@@ -436,7 +446,7 @@ merged_data <- merged_data %>%
 3. delete original_title & director columns
 
 ```{r}
-merged_data <- merged_data %>%
+merged_data_awards <- merged_data_awards %>%
   select(-original_title.x, -original_title.y, -director.x, -director.y)
 
 ```
@@ -444,7 +454,7 @@ merged_data <- merged_data %>%
 4. dealing with NAs in academy_award - academy_nominated - palme_dor
 
 ```{r}
-merged_data <- merged_data %>%
+merged_data_awards <- merged_data_awards %>%
   mutate(across(c(academy_award, academy_nominated, palme_dor), ~ replace(., is.na(.), 0)))
 
 ```
@@ -453,7 +463,7 @@ merged_data <- merged_data %>%
 
 ```{r}
 # Save the resulting dataset to a CSV file
-write.csv(merged_data, "merged_awards_data.csv", row.names = FALSE)
+write.csv(merged_data_awards, "merged_awards_data.csv", row.names = FALSE)
 
 ```
 
@@ -461,8 +471,8 @@ write.csv(merged_data, "merged_awards_data.csv", row.names = FALSE)
 
 ```{r}
 
-awards_data <-  merged_data
-movies_data <-  merged_df
+awards_data <-  merged_data_awards
+movies_data <-  merged_data
 
 final_data <- left_join(movies_data, awards_data, by = "title")
 
