@@ -672,6 +672,7 @@ country_graph <- graph_from_data_frame(df_pairs, directed = FALSE)
 
 
 print(country_graph)
+```
 
 
 ```{r}
