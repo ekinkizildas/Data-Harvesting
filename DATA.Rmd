@@ -9,6 +9,7 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+# SCRAPING AND WORKING ON THE DATASET
 ## Necessary Libraries
 
 ```{r}
@@ -31,8 +32,7 @@ library(tidyr)
 
 ```
 
-
-## API SETUP:
+## API SETUP
 
 ```{r}
 #usethis::edit_r_environ()
@@ -169,8 +169,6 @@ head(all_movies_regional_release_dates)
 
 ```
 
-
-scrapes for the movie id, title, year of release, popularity score, original language, poster
 ```{r}
 
 set.seed(123)
@@ -237,26 +235,21 @@ print(dim(all_movies))
 head(all_movies)
 ```
 
-
-## Join the 2 datasets from TMDB
+## Join the 2 datasets from TMDB (UPDATED!!!)
 
 ```{r}
+# Load necessary libraries
+library(dplyr)
 
-merged_movies <- all_movies_regional_release_dates %>% 
-  inner_join(all_movies, by = c("movie_id", "title"))
+# Merge the datasets on the 'movie_id' column
+merged_data <- all_movies %>%
+  left_join(all_movies_regional_release_dates, by = "movie_id")
 
-# View result
-print(dim(merged_movies))
-head(merged_df)
-
-
-
-head(merged_movies)
 
 ```
 
 
-## Getting Academy Awards
+## Scraping for the Academy Awards
 
 ```{r}
 
@@ -297,8 +290,7 @@ write.csv(oscar_movies_clean, "oscar_winning_films.csv", row.names = FALSE)
 
 ```
 
-
-## Getting Venice's Golden Lions
+## Scraping for Venice's Golden Lions
 
 ```{r} 
 
@@ -334,8 +326,7 @@ write.csv(golden_lion_clean, "venice_film_festival_winners.csv", row.names = FAL
 
 ```
 
-
-## Getting Cannes' Palme D'Or
+## Scraping for Cannes' Palme D'Or
 
 ```{r} 
 
@@ -383,7 +374,6 @@ print(head(palme_dor_clean, 10))
 write.csv(palme_dor_clean, "cannes_film_festival_winners.csv", row.names = FALSE)
 
 ```
-
 
 ## Merging the Awards Datasets
 
@@ -437,7 +427,7 @@ oscar_winners <- oscar_winners %>%
 
 # Merge the datasets
 # First, merge Oscar winners with Cannes winners
-merged_data <- full_join(oscar_winners, cannes_winners, by = c("title", "year")) %>%
+merged_data_awards <- full_join(oscar_winners, cannes_winners, by = c("title", "year")) %>%
   mutate(
     academy_award = ifelse(is.na(academy_award), 0, academy_award),
     academy_nominated = ifelse(is.na(academy_nominated), 0, academy_nominated),
@@ -445,25 +435,24 @@ merged_data <- full_join(oscar_winners, cannes_winners, by = c("title", "year"))
   )
 
 # Next, merge the result with Venice winners
-merged_data <- full_join(merged_data, venice_winners, by = c("title", "year")) %>%
+merged_data_awards <- full_join(merged_data_awards, venice_winners, by = c("title", "year")) %>%
   mutate(
     golden_lion = ifelse(is.na(golden_lion), 0, golden_lion)
   )
 
 # Print the resulting dataset
-print(merged_data)
+print(merged_data_awards)
 
 # Filter the dataset to include only movies from 2000 to 2025
-merged_data <- merged_data %>%
+merged_data_awards <- merged_data_awards %>%
   filter(year >= 2000 & year <= 2025)
 
 ```
 
-
 3. delete original_title & director columns
 
 ```{r}
-merged_data <- merged_data %>%
+merged_data_awards <- merged_data_awards %>%
   select(-original_title.x, -original_title.y, -director.x, -director.y)
 
 ```
@@ -471,25 +460,23 @@ merged_data <- merged_data %>%
 4. dealing with NAs in academy_award - academy_nominated - palme_dor
 
 ```{r}
-merged_data <- merged_data %>%
+merged_data_awards <- merged_data_awards %>%
   mutate(across(c(academy_award, academy_nominated, palme_dor), ~ replace(., is.na(.), 0)))
 
 ```
 
-5. SAVE EVERYTHING:
+5. Save everything
 
 ```{r}
 # Save the resulting dataset to a CSV file
-write.csv(merged_data, "merged_awards_data.csv", row.names = FALSE)
+write.csv(merged_data_awards, "merged_awards_data.csv", row.names = FALSE)
 
 ```
 
-## MERGING THE WHOLE DATASET
+## Merging the whole dataset
 
 ```{r}
 
-awards_data <-  merged_data
-movies_data <-  merged_movies
 
 final_data <- left_join(movies_data, awards_data, by = "title")
 
@@ -507,7 +494,7 @@ final_data <- final_data %>%
 
 ```
 
-export
+## Export
 
 ```{r}
 
@@ -516,14 +503,33 @@ write.csv(final_data, "final_data.csv")
 
 ```
 
+# ANALYSIS & VISUALIZATIONS
 
+## Necessary Libraries
+
+```{r}
+library(tidyverse)
+library(tidytext)  
+library(ggwordcloud)  
+library(dplyr)  
+library(ggplot2)
+library(stopwords)
+library(igraph)
+library(ggraph)
+library(scales)
+library(networkD3)
+library(imager)
+library(stats)
+library(highcharter)
+
+```
+
+
+## Ekin
 
 ```{r}
 df <- read.csv("final_data.csv")
 
-
-
-library(tidyverse)
 
 # 1. Number of Movies by Year
 ggplot(df, aes(x = as.factor(release_year))) +
@@ -578,8 +584,6 @@ ggplot(top_languages, aes(x = reorder(language, n), y = n)) +
 ```
 
 ```{r}
-library(tidyverse)
-
 df <- df %>%
   dplyr::select(-year, -country.y, -original_language) %>%
   rename(country = country.x)
@@ -616,13 +620,6 @@ ggplot(df, aes(x = popularity, y = total_awards)) +
 ```
 
 ```{r}
-
-library(tidytext)  
-library(ggwordcloud)  
-library(dplyr)  
-library(ggplot2)
-library(stopwords)
-
 word_data <- df %>%
   filter(!is.na(title)) %>%
   unnest_tokens(word, title) %>%
@@ -643,13 +640,6 @@ ggplot(word_data, aes(label = word, size = n, color = n)) +
 ```
 
 ```{r}
-library(igraph)
-library(ggraph)
-library(tidyverse)
-library(scales)
-
-
-
 df_countries <- df %>%
   select(title, country) %>%
   filter(!is.na(country)) %>%
@@ -734,14 +724,7 @@ print("Downloaded")
 
 
 
-
 ```{r}
-
-library(imager)
-library(stats)
-library(ggplot2)
-
-
 
 poster_folder <- "posters/"
 poster_files <- list.files(poster_folder, full.names = TRUE)
@@ -775,8 +758,6 @@ print(all_dominant_colors)
 
 
 ```{r}
-library(networkD3)
-
 language_colors_grouped <- language_colors_grouped %>%
   group_by(language) %>%
   summarise(r = mean(r), g = mean(g), b = mean(b), hex = first(hex), .groups = "drop")
@@ -971,4 +952,123 @@ ggplot(rare_colors, aes(x = reorder(hex, n), y = n, fill = hex)) +
 
 
 ```
+
+
+## Au
+
+## Preparing the data
+
+```{r}
+# Assuming final_data is your dataset
+# Group by movie title and summarize the data
+grouped_data <- final_data %>%
+  group_by(title) %>%
+  summarise(
+    movie_id = first(movie_id),
+    release_year = first(release_year),
+    popularity = mean(popularity, na.rm = TRUE),
+    poster_path = first(poster_path),
+    language = first(language),
+    country = toString(unique(country)),  # Combine unique countries
+    release_date = toString(unique(release_date)),  # Combine unique release dates
+    academy_award = max(academy_award),
+    academy_nominated = max(academy_nominated),
+    palme_dor = max(palme_dor),
+    golden_lion = max(golden_lion)
+  ) %>%
+  ungroup()
+
+# Filter the top 10 most popular movies
+top_10_movies <- grouped_data %>%
+  arrange(desc(popularity)) %>%
+  head(10)
+
+```
+
+
+::: {.panel-tabset .nav-pills}
+## Awards Distribution
+to show the distribution of different awards won by the top 10 movies
+### all movies
+
+```{r}
+# Create a bar plot to show the distribution of different awards won by movies
+awards_distribution <- final_data %>%
+  select(academy_award, academy_nominated, palme_dor, golden_lion) %>%
+  summarise_all(sum) %>%
+  pivot_longer(cols = everything(), names_to = "Award", values_to = "Count")
+
+highchart() %>%
+  hc_chart(type = 'column') %>%
+  hc_xAxis(categories = awards_distribution$Award) %>%
+  hc_add_series(name = "Awards Count", data = awards_distribution$Count, color = "#1c9099") %>%
+  hc_title(text = "Awards Distribution") %>%
+  hc_subtitle(text = "All movies")
+```
+
+### top 10 movies
+
+```{r}
+# Create a bar plot to show the distribution of different awards won by movies
+awards_distribution <- top_10_movies %>%
+  select(academy_award, academy_nominated, palme_dor, golden_lion) %>%
+  summarise_all(sum) %>%
+  pivot_longer(cols = everything(), names_to = "Award", values_to = "Count")
+
+highchart() %>%
+  hc_chart(type = 'column') %>%
+  hc_xAxis(categories = awards_distribution$Award) %>%
+  hc_add_series(name = "Awards Count", data = awards_distribution$Count, color = "#8856a7") %>%
+  hc_title(text = "Awards Distribution") %>%
+  hc_subtitle(text = "Top 10 Most Popular Movies")
+
+```
+:::
+
+## Top Movies by Popularity
+
+a bar plot to highlight the top 10 movies by popularity and show their awards
+
+```{r}
+# Create a bar plot to highlight the top 10 movies by popularity and show their awards
+highchart() %>%
+  hc_chart(type = 'column') %>%
+  hc_xAxis(categories = top_10_movies$title) %>%
+  hc_add_series(name = "Popularity", data = top_10_movies$popularity, color = "#dd1c77") %>%
+  hc_add_series(name = "Academy Award", data = top_10_movies$academy_award, type = 'line', color = "darkgreen") %>%
+  hc_add_series(name = "Academy Nominated", data = top_10_movies$academy_nominated, type = 'line', color = "#31a354") %>%
+  hc_add_series(name = "Palme D'Or", data = top_10_movies$palme_dor, type = 'line', color = "#a1d99b") %>%
+  hc_add_series(name = "Golden Lion", data = top_10_movies$golden_lion, type = 'line', color = "#e5f5e0") %>%
+  hc_title(text = "Top Movies by Popularity and Awards") %>%
+  hc_subtitle(text = "Highlighting Awards Won")
+
+```
+
+
+## Popularity by release year
+
+[Line chart]
+This chart will show how the average popularity of movies has changed over the years. It can help identify trends in movie popularity over time.
+
+```{r}
+# Calculate average popularity by release year
+popularity_by_year <- grouped_data %>%
+  group_by(release_year) %>%
+  summarise(avg_popularity = mean(popularity, na.rm = TRUE))
+
+# Create a line chart
+highchart() %>%
+  hc_chart(type = 'line') %>%
+  hc_xAxis(title = list(text = "Release Year"), categories = popularity_by_year$release_year) %>%
+  hc_add_series(name = "Average Popularity", data = popularity_by_year$avg_popularity, color = "#8856a7") %>%
+  hc_title(text = "Average Movie Popularity by Release Year") %>%
+  hc_subtitle(text = "Trends in Movie Popularity Over Time")
+
+
+```
+
+## !!! Awards vs Popularity
+
+## Heatmap of Awards and Popularity 
+
 
