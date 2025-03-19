@@ -519,6 +519,8 @@ write.csv(final_data, "final_data.csv")
 
 # ANALYSIS & VISUALIZATIONS
 
+In this section, we present a series of visualizations that explore various aspects of movie data, focusing on popularity and awards. Through these graphs, we aim to uncover trends, patterns, and insights that highlight the dynamics of the film industry over time.
+
 ## Necessary Libraries
 
 ```{r}
@@ -539,12 +541,7 @@ library(RColorBrewer)
 
 ```
 
-
-## Visualization
-
-In this section, we created some visualization to describe … ??
-
-#### Number of Movies by Year
+## Number of Movies by Year
 
 ```{r}
 final_data <- read.csv("final_data.csv")
@@ -558,7 +555,7 @@ ggplot(final_data, aes(x = as.factor(release_year))) +
 
 ```
 
-### Movie Distribution by Country (Top 10 countries producing the most movies)
+## Movie Distribution by Country (Top 10 countries producing the most movies)
 
 ```{r}
 # 2. Movie Distribution by Country (Top 10 countries producing the most movies)
@@ -574,7 +571,7 @@ ggplot(top_countries, aes(x = reorder(country, n), y = n)) +
 
 ```
 
-### Popularity Distribution
+## Popularity Distribution
 
 ```{r}
 # 3. Popularity Distribution
@@ -585,7 +582,7 @@ ggplot(final_data, aes(x = popularity)) +
 
 ```
 
-### Language Distribution (Top 10 most used languages)
+## Language Distribution (Top 10 most used languages)
 
 ```{r}
 # 5. Language Distribution (Top 10 most used languages)
@@ -600,7 +597,7 @@ ggplot(top_languages, aes(x = reorder(language, n), y = n)) +
   theme_minimal()
 ```
 
-### Popularity vs. Awards
+## Popularity vs. Awards
 
 ```{r}
 # Calculate total awards
@@ -616,7 +613,7 @@ ggplot(final_data, aes(x = popularity, y = total_awards)) +
 
 ```
 
-### Words in Movie Titles
+## Words in Movie Titles
 
 ```{r}
 word_data <- final_data %>%
