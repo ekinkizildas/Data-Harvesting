@@ -28,7 +28,7 @@ library(stringr)
 
 ```
 
-## API SETUP:
+## API SETUP
 
 ```{r}
 #usethis::edit_r_environ()
