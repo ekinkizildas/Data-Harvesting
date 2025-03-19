@@ -538,9 +538,11 @@ library(RColorBrewer)
 ```
 
 
-## Ekin
+## Visualization
 
-#### 1. Number of Movies by Year
+In this section, we created some visualization to describe … ??
+
+#### Number of Movies by Year
 
 ```{r}
 final_data <- read.csv("final_data.csv")
@@ -554,7 +556,7 @@ ggplot(final_data, aes(x = as.factor(release_year))) +
 
 ```
 
-### 2. Movie Distribution by Country (Top 10 countries producing the most movies)
+### Movie Distribution by Country (Top 10 countries producing the most movies)
 
 ```{r}
 # 2. Movie Distribution by Country (Top 10 countries producing the most movies)
@@ -570,7 +572,7 @@ ggplot(top_countries, aes(x = reorder(country, n), y = n)) +
 
 ```
 
-### 3. Popularity Distribution
+### Popularity Distribution
 
 ```{r}
 # 3. Popularity Distribution
@@ -581,7 +583,7 @@ ggplot(final_data, aes(x = popularity)) +
 
 ```
 
-### 5. Language Distribution (Top 10 most used languages)
+### Language Distribution (Top 10 most used languages)
 
 ```{r}
 # 5. Language Distribution (Top 10 most used languages)
@@ -596,7 +598,7 @@ ggplot(top_languages, aes(x = reorder(language, n), y = n)) +
   theme_minimal()
 ```
 
-## Popularity vs. Awards
+### Popularity vs. Awards
 
 ```{r}
 # Calculate total awards
@@ -612,7 +614,7 @@ ggplot(final_data, aes(x = popularity, y = total_awards)) +
 
 ```
 
-## Words in Movie Titles
+### Words in Movie Titles
 
 ```{r}
 word_data <- final_data %>%
@@ -634,7 +636,7 @@ ggplot(word_data, aes(label = word, size = n, color = n)) +
 
 ```
 
-## TO CHECK 
+### TO CHECK 
 
 ```{r}
 df_pairs <- final_data %>%
@@ -657,7 +659,7 @@ country_graph <- graph_from_data_frame(df_pairs, directed = FALSE)
 print(country_graph)
 
 ```
-### MISSING THE TITLE
+#### MISSING THE TITLE
 
 ```{r}
 # Veriyi hazırlayalım
@@ -702,9 +704,6 @@ Looking at the visualization, we can see that some countries, like the United St
 
 In contrast, some countries, like Brazil (BR) or Italy (IT), have smaller nodes, meaning they are involved in fewer co-productions. They might still play a role in international films but not as frequently as the major hubs. Additionally, some countries may have only a few connections, suggesting that they primarily produce films domestically rather than engaging in frequent international partnerships.
 
-
-
-## Au
 
 ## Preparing the data
 
