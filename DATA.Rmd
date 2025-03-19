@@ -24,6 +24,10 @@ library(dplyr)
 library(fuzzyjoin)
 library(rvest)
 library(stringr)
+library(rvest)
+library(dplyr)
+library(stringr)
+library(tidyr)
 
 ```
 
@@ -38,28 +42,30 @@ api_key <- Sys.getenv("api_key")
 ```
 
 ## SCRAPING
-scrapes for the movie id, title, year of release, popularity score, original language, poster
+scrapes also for the release date
 
 ```{r}
-set.seed(123)
-# ✅ Enable parallel processing (4 workers)
-plan(multisession, workers = 4)
 
-# ✅ Define time range
+
+set.seed(123)  # Ensures reproducibility
+plan(multisession, workers = 4)  # Enable parallel processing
+
+
+# Define time range
 start_year <- 2000
 end_year <- as.numeric(format(Sys.Date(), "%Y"))
 
-# ✅ Define countries
+# Define countries
 countries <- c("US", "GB", "DE", "FR", "TR", "IN", "JP", "ES", "IT", "BR")
 
-# ✅ Define selected languages
+# Define selected languages
 languages <- c("es", "fr", "de", "tr", "ja", "ru", "zh", "ko", "pt", "hi", "it")
 
-### **STEP 1: Fetch Top 50 Movies Per Language (Faster)**
+### **STEP 1: Fetch Top 50 Movies Per Language**
 fetch_movies_by_language <- function(lang) {
   movies_list <- list()
 
-  for (page in 1:2) {  # ✅ Limit to first 2 pages (~50 movies per language)
+  for (page in 1:2) {  # Limit to first 2 pages (~50 movies per language)
     movie_url <- paste0("https://api.themoviedb.org/3/discover/movie?api_key=", api_key,
                         "&sort_by=popularity.desc",
                         "&primary_release_date.gte=", start_year, "-01-01",
@@ -72,7 +78,7 @@ fetch_movies_by_language <- function(lang) {
       GET(movie_url, timeout(10))
     }, error = function(e) NULL)
 
-    Sys.sleep(runif(1, 1, 2))  # ✅ Shorter delay (1-2 sec)
+    Sys.sleep(runif(1, 1, 2))  # Short delay (1-2 sec) to avoid rate limits
 
     if (!is.null(response) && status_code(response) == 200) {
       movies <- fromJSON(content(response, "text", encoding = "UTF-8"))$results
@@ -98,8 +104,13 @@ fetch_movies_by_language <- function(lang) {
   }
 }
 
-# ✅ Fetch movies in parallel
+# Fetch movies in parallel
 all_movies <- future_map_dfr(languages, fetch_movies_by_language, .progress = TRUE, .options = furrr_options(seed = TRUE))
+
+# Ensure data is not empty
+if (nrow(all_movies) == 0) {
+  stop("🚨 No movies were fetched! Check API key or language codes.")
+}
 
 ### **STEP 2: Fetch Regional Release Dates**
 fetch_regional_release_dates <- function(movie) {
@@ -115,13 +126,13 @@ fetch_regional_release_dates <- function(movie) {
       GET(release_dates_url, timeout(8))
     }, error = function(e) NULL)
 
-    Sys.sleep(runif(1, 1, 2))  # ✅ Less waiting time
+    Sys.sleep(runif(1, 1, 2))  # Short delay to avoid rate limiting
 
     if (!is.null(response) && status_code(response) == 200) {
       release_dates_data <- fromJSON(content(response, "text", encoding = "UTF-8"))$results
       country_release_date <- release_dates_data[release_dates_data$iso_3166_1 == country, ]
 
-      if (nrow(country_release_date) > 0) {
+      if (!is.null(country_release_date) && nrow(country_release_date) > 0) {
         return(tibble(
           movie_id = movie_id,
           title = title,
@@ -132,23 +143,34 @@ fetch_regional_release_dates <- function(movie) {
       }
     }
     return(NULL)
-  }, .progress = TRUE)
+  }, .progress = TRUE, .options = furrr_options(seed = TRUE))
 
   return(regional_release_dates)
 }
 
-# ✅ Fetch regional release dates in parallel for multiple movies at once
-all_movies_regional_release_dates <- future_map_dfr(split(all_movies, seq(nrow(all_movies))), fetch_regional_release_dates, .progress = TRUE, .options = furrr_options(seed = TRUE))
+# Fetch regional release dates in parallel
+all_movies_regional_release_dates <- future_map_dfr(
+  split(all_movies, seq(nrow(all_movies))), 
+  fetch_regional_release_dates, 
+  .progress = TRUE, 
+  .options = furrr_options(seed = TRUE)
+)
 
-# ✅ Save final dataset
+# Ensure regional release data is not empty
+if (nrow(all_movies_regional_release_dates) == 0) {
+  stop("🚨 No regional release dates fetched! Check API key or country codes.")
+}
+
+# Save final dataset
 write.csv(all_movies_regional_release_dates, "movies_with_regional_release_dates.csv", row.names = FALSE)
 
 print(dim(all_movies_regional_release_dates))
 head(all_movies_regional_release_dates)
+
 ```
 
 
-scrapes also for the release date
+scrapes for the movie id, title, year of release, popularity score, original language, poster
 ```{r}
 
 set.seed(123)
@@ -220,20 +242,16 @@ head(all_movies)
 
 ```{r}
 
-merged_df <- stringdist_inner_join(all_movies, all_movies_regional_release_dates, 
-                                   by = "title", max_dist = 2, method = "jw")
+merged_movies <- all_movies_regional_release_dates %>% 
+  inner_join(all_movies, by = c("movie_id", "title"))
 
 # View result
-print(dim(merged_df))
+print(dim(merged_movies))
 head(merged_df)
 
 
-merged_df<- merged_df %>%
-  select(movie_id = movie_id.x, title = title.x, release_year, popularity, 
-         original_language, poster_path, language, country, release_date)
 
-
-head(merged_df)
+head(merged_movies)
 
 ```
 
@@ -241,6 +259,8 @@ head(merged_df)
 ## Getting Academy Awards
 
 ```{r}
+
+
 
 # Wikipedia page URL
 oscar_url <- "https://en.wikipedia.org/wiki/List_of_Academy_Award%E2%80%93winning_films"
@@ -251,21 +271,21 @@ oscar_page <- read_html(oscar_url)
 # Select the table that contains the Oscar-winning movies
 oscar_movies <- oscar_page %>%
   html_nodes("table.wikitable") %>%
-  .[[1]] %>%  # First table contains the main list
+  .[[1]] %>%
   html_table(fill = TRUE)
 
-# Show the first few rows
+# Show first few rows
 print(head(oscar_movies))
 
 # Rename columns for clarity
 colnames(oscar_movies) <- c("film", "year", "awards_won", "nominations")
 
-# Clean data
+# Clean data and handle non-numeric values safely
 oscar_movies_clean <- oscar_movies %>%
   mutate(
     year = as.numeric(str_extract(year, "\\d{4}")),  # Extract only the year
-    awards_won = as.numeric(awards_won),  # Convert to numeric
-    nominations = as.numeric(nominations)  # Convert to numeric
+    awards_won = as.numeric(gsub("[^0-9]", "", awards_won)),  # Remove non-numeric characters
+    nominations = as.numeric(gsub("[^0-9]", "", nominations))  # Remove non-numeric characters
   ) %>%
   drop_na()  # Remove rows with missing values
 
@@ -372,9 +392,9 @@ write.csv(palme_dor_clean, "cannes_film_festival_winners.csv", row.names = FALSE
 ```{r}
 
 # Load the datasets
-cannes_winners <- read_csv("cannes_film_festival_winners.csv")
-venice_winners <- read_csv("venice_film_festival_winners.csv")
-oscar_winners <- read_csv("oscar_winning_films.csv")
+cannes_winners <- palme_dor_clean
+venice_winners <- golden_lion_clean
+oscar_winners <- oscar_movies_clean
 
 # Rename columns in cannes_winners
 cannes_winners <- cannes_winners %>%
@@ -469,7 +489,7 @@ write.csv(merged_data, "merged_awards_data.csv", row.names = FALSE)
 ```{r}
 
 awards_data <-  merged_data
-movies_data <-  merged_df
+movies_data <-  merged_movies
 
 final_data <- left_join(movies_data, awards_data, by = "title")
 
