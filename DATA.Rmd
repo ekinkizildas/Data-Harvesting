@@ -709,6 +709,8 @@ In contrast, some countries, like Brazil (BR) or Italy (IT), have smaller nodes,
 
 ## Preparing the data
 
+In this code, we prepare the data for visualizations by grouping the dataset by movie title and summarizing key attributes such as popularity, release dates, and awards. We then filter the data to identify the top 10 most popular movies based on their average popularity score. This process ensures that the data is structured and ready for creating insightful visualizations.
+
 ```{r}
 # Assuming final_data is your dataset
 # Group by movie title and summarize the data
@@ -738,8 +740,10 @@ top_10_movies <- grouped_data %>%
 
 
 ## Awards Distribution
-to show the distribution of different awards won by the top 10 movies
-### all movies
+
+The provided code generates bar charts to visualize the distribution of awards among movies, using data from a dataset. For all movies, it sums up the counts of various awards and creates a bar plot to show the dominance of Academy Awards and nominations. Similarly, for the top 10 most popular movies, it highlights the prevalence of Academy recognition, while other prestigious awards like the Palme d'Or and Golden Lion are less represented.
+
+### Awards Distribution for All Movies
 
 ```{r}
 # Create a bar plot to show the distribution of different awards won by movies
@@ -756,7 +760,13 @@ highchart() %>%
   hc_subtitle(text = "All movies")
 ```
 
-### top 10 movies
+The first bar chart illustrates the distribution of various awards across all movies in the dataset. We can notice:
+
+★ Academy Award and Academy Nominated: Both categories have the highest counts, indicating that a significant number of movies have either won or been nominated for Academy Awards. This suggests a strong representation of these movies in prestigious award ceremonies.
+
+★ Palme d'Or and Golden Lion: These awards have much lower counts compared to the Academy-related categories. This indicates fewer movies in the dataset have received these awards, which are associated with the Cannes Film Festival (Palme d'Or) and the Venice Film Festival (Golden Lion).
+
+### Awards Distribution for Top 10 Most Popular Movies
 
 ```{r}
 # Create a bar plot to show the distribution of different awards won by movies
@@ -774,10 +784,19 @@ highchart() %>%
 
 ```
 
+The second bar chart focuses on the top 10 most popular movies, showing a similar pattern:
+
+★ Academy Award and Academy Nominated: These categories again dominate, with equal counts, suggesting that the most popular movies are also frequently recognized by the Academy.
+
+★ Palme d'Or and Golden Lion: These awards are absent in the top 10 most popular movies, indicating that popularity, as measured here, does not necessarily correlate with winning these specific awards.
+
+
+We notice that both charts highlight the prominence of Academy Awards and nominations in the dataset, while Palme d'Or and Golden Lion awards are less common. The top 10 most popular movies are particularly notable for their Academy recognition, but not for the other prestigious awards, suggesting a potential disparity between popularity and critical acclaim from international film festivals.
+
 
 ## Top Movies by Popularity
 
-a bar plot to highlight the top 10 movies by popularity and show their awards
+The code generates a bar and line chart to visualize the top 10 movies by popularity, highlighting various awards they have received. It uses the highchart function to create a column chart for popularity and overlays line charts to represent different awards, such as Academy Awards, nominations, Palme d'Or, and Golden Lion.
 
 ```{r}
 # Create a bar plot to highlight the top 10 movies by popularity and show their awards
@@ -794,11 +813,11 @@ highchart() %>%
 
 ```
 
+The graph illustrates the popularity of the top 10 movies with bars, while lines indicate the awards each movie has won. "I'm Still Here" stands out with the highest popularity, though it has minimal awards. Most movies show a consistent pattern of receiving Academy nominations, but few have won the Palme d'Or or Golden Lion, suggesting that popularity does not necessarily correlate with winning these prestigious awards.
 
 ## Popularity by release year
 
-[Line chart]
-This chart will show how the average popularity of movies has changed over the years. It can help identify trends in movie popularity over time.
+The code calculates the average popularity of movies for each release year and creates a line chart to visualize these trends over time. It groups the data by release year, computes the mean popularity, and uses the highchart function to plot the results, highlighting how movie popularity has evolved.
 
 ```{r}
 # Calculate average popularity by release year
@@ -817,6 +836,7 @@ highchart() %>%
 
 ```
 
+The graph shows fluctuations in movie popularity from 2000 to 2024, with a noticeable peak in 2024. This suggests a recent surge in popularity, possibly due to recent releases or increased interest in movies. Overall, the trend indicates variability in popularity over the years, with some periods of decline and recovery.
 
 
 
