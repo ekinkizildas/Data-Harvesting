@@ -25,11 +25,7 @@ library(dplyr)
 library(fuzzyjoin)
 library(rvest)
 library(stringr)
-library(rvest)
-library(dplyr)
-library(stringr)
 library(tidyr)
-library(tidyverse)
 
 ```
 
@@ -477,7 +473,8 @@ write.csv(merged_data_awards, "merged_awards_data.csv", row.names = FALSE)
 ## Merging the whole dataset
 
 ```{r}
-library(tidyverse)
+movies_data <- all_movies
+awards_data <- merged_data_awards
 
 final_data <- left_join(movies_data, awards_data, by = "title")
 
@@ -490,8 +487,7 @@ delete year & country.y columns & renames country
 
 ```{r}
 final_data <- final_data %>%
-  select(-year, -country.y, -original_language) %>%
-  rename(country = country.x)
+  select(-country, - year)
 
 ```
 
