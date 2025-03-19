@@ -583,9 +583,7 @@ ggplot(top_languages, aes(x = reorder(language, n), y = n)) +
 ```
 
 ```{r}
-df <- df %>%
-  dplyr::select(-year, -country.y, -original_language) %>%
-  rename(country = country.x)
+
 
 
 
@@ -621,6 +619,7 @@ ggplot(df, aes(x = popularity, y = total_awards)) +
 
 ```
 
+
 ```{r}
 
 
@@ -651,329 +650,85 @@ ggplot(word_data, aes(label = word, size = n, color = n)) +
 
 ```
 
+
+
 ```{r}
-df_countries <- df %>%
-  select(title, country) %>%
-  filter(!is.na(country)) %>%
-  separate_rows(country, sep = ",")  # Adjust separator if needed
+library(networkD3)
+library(igraph)
 
-# Generate country pairs for each movie
-edges <- df_countries %>%
+# Veriyi hazırlayalım
+nodes <- data.frame(name = unique(c(df_pairs$from, df_pairs$to)))
+nodes$id <- 0:(nrow(nodes) - 1)
 
+links <- df_pairs %>%
+  left_join(nodes, by = c("from" = "name")) %>%
+  rename(source = id) %>%
+  left_join(nodes, by = c("to" = "name")) %>%
+  rename(target = id) %>%
+  mutate(value = weight)
+
+forceNetwork(Links = as.data.frame(links), Nodes = as.data.frame(nodes), 
+             Source = "source", Target = "target", 
+             NodeID = "name", Value = "value", 
+             Group = "name", opacity = 0.9, 
+             zoom = TRUE, fontSize = 12)
+
+
+```
+
+
+```{r}
 library(dplyr)
 library(tidyr)
 library(igraph)
 library(ggraph)
-
 df_pairs <- final_data %>%
+  select(title, country) %>%  
   group_by(title) %>%
-  summarise(
-    country_pairs = if (n_distinct(country) > 1) {
-      list(combn(unique(country), 2, simplify = FALSE))  # Generate country pairs
-    } else {
-      list(NULL)  # Skip movies with only one country
-    }
-  ) %>%
-  unnest(country_pairs) %>%  
-  filter(!is.null(country_pairs)) %>%  
-  unnest_wider(country_pairs, names_sep = "_") %>%  
+  summarise(country_pairs = if (n_distinct(country) > 1) {
+    list(combn(unique(country), 2, simplify = FALSE))
+  } else {
+    list(NULL)
+  }) %>%
+  unnest(country_pairs) %>%
+  filter(!is.null(country_pairs)) %>%
+  unnest_wider(country_pairs, names_sep = "_") %>%
   rename(from = country_pairs_1, to = country_pairs_2) %>%
-  count(from, to, name = "weight")  # Count co-productions
+  count(from, to, name = "weight")
 
-
-
-# Create graph object
 country_graph <- graph_from_data_frame(df_pairs, directed = FALSE)
 
-# Calculate node size based on total collaborations
-node_sizes <- data.frame(name = V(country_graph)$name) %>%
-  left_join(edges %>% 
-              group_by(from) %>% 
-              summarise(size = sum(weight)), 
-            by = c("name" = "from")) %>%
-  replace_na(list(size = 1))  # Replace missing values with 1
 
-# Enhanced network graph visualization
-ggraph(country_graph, layout = "fr") +  
-  geom_edge_link(aes(edge_width = weight, alpha = weight), color = "gray") +  
-    scale_edge_width(range = c(0.5, 5), trans = "log10") +  # Proper log-scaling
-  geom_node_point(aes(size = node_sizes$size), color = "darkblue") +  
-  geom_node_text(aes(label = name), repel = TRUE, size = 5, fontface = "bold") +  
-  theme_void() +  
-  labs(title = "Enhanced Movie Co-Production Network",
-       subtitle = "Edge thickness represents number of collaborations",
-       edge_width = "Co-Productions")
+print(country_graph)
+
 
 ```
+```{r}
+library(ggraph)
+library(RColorBrewer)
+
+V(country_graph)$degree <- degree(country_graph)
+
+node_colors <- brewer.pal(n = 8, name = "Dark2")
+
+ggraph(country_graph, layout = "fr") +  
+  geom_edge_link(aes(edge_width = weight, alpha = weight), color = "gray") +  
+  scale_edge_width(range = c(0.5, 5), trans = "log10") +  
+  scale_edge_alpha(range = c(0.3, 1)) +  
+  geom_node_point(aes(size = V(country_graph)$degree, color = as.factor(V(country_graph)$degree))) +  
+  scale_color_manual(values = node_colors) +  
+  geom_node_text(aes(label = name), repel = TRUE, size = 6, fontface = "bold") +  
+  theme_void()
+
+```
+
+
 
 Looking at the visualization, we can see that some countries, like the United States (US), France (FR), and Germany (DE), have larger nodes. This indicates that they are key players in international co-productions, frequently working with multiple other nations. The thickness of the edges reveals which partnerships are the strongest. For example, if there is a thick line between US and FR, it means these two countries have collaborated on many films.
 
 In contrast, some countries, like Brazil (BR) or Italy (IT), have smaller nodes, meaning they are involved in fewer co-productions. They might still play a role in international films but not as frequently as the major hubs. Additionally, some countries may have only a few connections, suggesting that they primarily produce films domestically rather than engaging in frequent international partnerships.
 
-```{r}
-library(httr)
-library(magick)
-library(dplyr)
 
-
-
-
-df_posters <- final_data %>%
-  filter(!is.na(poster_path)) %>% 
-  distinct(poster_path, .keep_all = TRUE) %>%  
-  select(title, poster_path, popularity) %>%
-  head(179) 
-
-
-
-for (i in 1:nrow(df_posters)) {
-  url <- df_posters$poster_path[i]
-  file_name <- paste0(poster_folder, gsub("[^A-Za-z0-9]", "_", df_posters$title[i]), ".jpg")
-  
-  if (!is.na(url) && grepl("^https?://", url)) {  
-    print(paste("Downloading:", url))
-    
-    if (!file.exists(file_name)) {  
-      try(GET(url, write_disk(file_name, overwrite = TRUE)), silent = TRUE)
-    }
-  } else {
-    print(paste("Invalid URL:", url))
-  }
-}
-
-print("Downloaded")
-
-```
-
-
-
-```{r}
-
-poster_folder <- "posters/"
-poster_files <- list.files(poster_folder, full.names = TRUE)
-
-# Birden fazla posterde analiz yapalım
-all_dominant_colors <- data.frame(movie = character(),
-                                  r = numeric(), g = numeric(), b = numeric(), hex = character())
-
-for (file in poster_files) {
-  # Renkleri çıkart
-  dominant_colors <- extract_colors(file, n_colors = 2)
-  
-  # Film adını dosya isminden al
-  movie_name <- gsub(".jpg", "", basename(file))
-  
-  # RGB değerlerini HEX formatına çevir
-  dominant_colors$hex <- rgb(dominant_colors$r / 255, 
-                             dominant_colors$g / 255, 
-                             dominant_colors$b / 255)
-  
-  # Sonucu birleştir
-  dominant_colors$movie <- movie_name
-  all_dominant_colors <- bind_rows(all_dominant_colors, dominant_colors)
-}
-
-# Sonuçları görelim
-print(all_dominant_colors)
-```
-
-
-
-
-```{r}
-language_colors_grouped <- language_colors_grouped %>%
-  group_by(language) %>%
-  summarise(r = mean(r), g = mean(g), b = mean(b), hex = first(hex), .groups = "drop")
-
-ggplot(language_colors_grouped, aes(x = reorder(language, -r), y = 1, fill = hex)) +
-  geom_bar(stat = "identity", width = 0.5) + 
-  scale_fill_identity() +
-  theme_minimal() +
-  coord_flip() +
-  labs(title = "Dominant Colors by Language",
-       x = "Language",
-       y = "Dominant Color")
-
-```
-
-```{r}
-
-
-poster_folder <- "posters/"
-poster_files <- list.files(poster_folder, full.names = TRUE)
-
-# Tüm filmler için baskın rengi ve yılı bulalım
-year_colors <- data.frame(year = integer(),
-                          r = numeric(), g = numeric(), b = numeric(), hex = character())
-
-for (file in poster_files) {
-  dominant_colors <- extract_colors(file, n_colors = 1)  # En baskın rengi al
-  movie_name <- gsub(".jpg", "", basename(file))
-  
-  # Film yılını datasetten alalım
-  movie_year <- df %>% filter(grepl(movie_name, title, ignore.case = TRUE)) %>% pull(release_year)
-  
-  # Eğer yıl bilgisi varsa
-  if (length(movie_year) > 0) {
-    dominant_colors$hex <- rgb(dominant_colors$r / 255, 
-                               dominant_colors$g / 255, 
-                               dominant_colors$b / 255)
-    
-    dominant_colors$year <- movie_year[1]  # Yılın ilk değerini al
-    year_colors <- bind_rows(year_colors, dominant_colors)
-  }
-}
-
-# Yıllara göre baskın renklerin ortalamasını alalım (REPLACED summarise() -> reframe())
-year_colors_grouped <- year_colors %>%
-  group_by(year) %>%
-  reframe(r = mean(r), g = mean(g), b = mean(b), hex = unique(hex))
-
-ggplot(year_colors_grouped, aes(x = year, y = r, color = hex)) +
-  geom_point(size = 4, alpha = 0.8) +  # Daha büyük ve saydam noktalar
-  geom_smooth(method = "loess", color = "blue", se = FALSE) +  # Trend çizgisi ekle
-  scale_color_identity() +  # Doğrudan hex kodlarını renk olarak ata
-  theme_minimal() +
-  labs(title = "Film Poster Colors Over the Years",
-       subtitle = "A shift in dominant poster colors over time",
-       x = "Year",
-       y = "Red Intensity (Proxy for Overall Color Trend)")
-
-
-```
-
-
-```{r}
-ggplot(year_colors_grouped, aes(x = year, y = 1, fill = hex)) +
-  geom_tile() +
-  scale_fill_identity() +
-  theme_minimal() +
-  labs(title = "Dominant Film Poster Colors by Year",
-       x = "Year",
-       y = "Color Representation")
-
-```
-
-```{r}
-
-
-extract_colors <- function(image_path, n_colors = 3) {  
-  img <- load.image(image_path)  # Görseli yükle
-  
-  # Görseli küçültüp işlem hızını artır
-  img_resized <- resize(img, size_x = 300, size_y = 300)  
-
-  # RGB piksel verisini al
-  img_data <- as.data.frame(as.array(img_resized))
-  img_data <- img_data[, 1:3]  # Sadece RGB kanallarını al
-  names(img_data) <- c("r", "g", "b")  
-
-  # RGB değerlerini 0-255 aralığına getir
-  img_data$r <- img_data$r * 255
-  img_data$g <- img_data$g * 255
-  img_data$b <- img_data$b * 255
-
-  # Benzersiz renklerin sayısını belirle
-  unique_colors <- nrow(unique(img_data))
-
-  # Eğer benzersiz renk sayısı seçilen `n_colors` değerinden küçükse, `n_colors`'ı ayarla
-  kmeans_clusters <- min(n_colors, unique_colors)
-
-  # K-Means ile baskın renkleri belirle (minimized n_colors)
-  kmeans_result <- kmeans(img_data, centers = kmeans_clusters, iter.max = 100)
-  dominant_colors <- as.data.frame(kmeans_result$centers)
-  
-  return(dominant_colors)
-}
-
-
-```
-
-
-```{r}
-
-
-extract_colors <- function(image_path, n_colors = 3) {  
-  img <- load.image(image_path)  # Görseli yükle
-  
-  # Görseli küçültüp işlem hızını artır
-  img_resized <- resize(img, size_x = 300, size_y = 300)  
-
-  # RGB piksel verisini al
-  img_data <- as.data.frame(as.array(img_resized))
-  img_data <- img_data[, 1:3]  # Sadece RGB kanallarını al
-  names(img_data) <- c("r", "g", "b")  
-
-  # RGB değerlerini 0-255 aralığına getir
-  img_data$r <- img_data$r * 255
-  img_data$g <- img_data$g * 255
-  img_data$b <- img_data$b * 255
-
-  # Tekrar eden renkleri kaldır ve benzersiz renkleri bul
-  unique_colors <- unique(img_data)
-
-  # Eğer benzersiz renk sayısı `n_colors`'tan azsa, onu otomatik ayarla
-  kmeans_clusters <- min(n_colors, nrow(unique_colors))
-
-  # Eğer yalnızca 1 renk varsa, doğrudan döndür
-  if (kmeans_clusters == 1) {
-    return(data.frame(r = unique_colors$r, g = unique_colors$g, b = unique_colors$b))
-  }
-
-  # K-Means ile baskın renkleri belirle (sadece uygun sayıda küme kullan)
-  kmeans_result <- kmeans(unique_colors, centers = kmeans_clusters, iter.max = 100)
-  dominant_colors <- as.data.frame(kmeans_result$centers)
-  
-  return(dominant_colors)
-}
-
-
-
-
-```
-
-
-
-```{r}
-
-color_grid_data <- popularity_colors %>%
-  select(hex) %>%
-  mutate(film = row_number())  
-
-color_grid_data <- color_grid_data %>%
-  filter(!hex %in% c("#000000", "#1A1A1A", "#2A2A2A")) 
-
-ggplot(color_grid_data, aes(x = film %% 10, y = film %/% 10, fill = hex)) + 
-  geom_tile(color = "white", size = 0.5) +  
-  scale_fill_identity() + 
-  theme_void() +
-  labs(title = "Movie Poster Color Grid")
-
-```
-
-
-
-```{r}
-
-
-
-color_counts <- popularity_colors %>%
-  count(hex, sort = TRUE)  
-
-rare_colors <- color_counts %>% tail(10)
-
-ggplot(rare_colors, aes(x = reorder(hex, n), y = n, fill = hex)) +
-  geom_bar(stat = "identity", width = 0.7) +
-  scale_fill_identity() +
-  theme_minimal() +
-  coord_flip() +
-  labs(title = "Least Used Colors in Movie Posters",
-       x = "Color",
-       y = "Number of Movies")
-
-
-
-```
 
 
 ## Au
