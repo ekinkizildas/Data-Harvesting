@@ -650,6 +650,8 @@ ggplot(word_data, aes(label = word, size = n, color = n)) +
 
 ```
 
+## TO CHECK 
+
 ```{r}
 df_pairs <- final_data %>%
   select(title, country) %>%  
@@ -669,7 +671,6 @@ country_graph <- graph_from_data_frame(df_pairs, directed = FALSE)
 
 
 print(country_graph)
-```
 
 ```
 
