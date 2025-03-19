@@ -450,7 +450,7 @@ merged_data_awards <- merged_data_awards %>%
 
 ```{r}
 merged_data_awards <- merged_data_awards %>%
-  select(-original_title.x, -original_title.y, -director.x, -director.y)
+  select(-original_title.x, -original_title.y, -director.x, -director.y, -country)
 
 ```
 
@@ -487,7 +487,7 @@ delete year & country.y columns & renames country
 
 ```{r}
 final_data <- final_data %>%
-  select(-country, - year)
+  select(- year)
 
 ```
 
@@ -515,7 +515,6 @@ library(igraph)
 library(ggraph)
 library(scales)
 library(networkD3)
-library(imager)
 library(stats)
 library(highcharter)
 
