@@ -31,6 +31,8 @@ library(tidyr)
 
 ## API SETUP
 
+This R script fetches and processes movie data using The Movie Database (TMDb) API (https://developer.themoviedb.org/docs/getting-started). 
+
 ```{r}
 #usethis::edit_r_environ()
 
@@ -38,9 +40,9 @@ api_key <- Sys.getenv("api_key")
 
 ```
 
-# LET'S SCRAPE
+## LET'S SCRAPE
 
-This R script fetches and processes movie data using The Movie Database (TMDb) API (https://developer.themoviedb.org/docs/getting-started). It sets up reproducible parallel processing to retrieve the top 50 movies for specified languages from 2000 to the current year. The script defines functions to fetch movie data and regional release dates for selected countries, handling API requests and responses efficiently. It uses parallel processing to speed up data retrieval and combines the results into data frames. Finally, it validates the data and saves the movie information with regional release dates to a CSV file, printing the dataset's dimensions and a preview of the data.
+This part sets up reproducible parallel processing to retrieve the top 50 movies for specified languages from 2000 to the current year. The script defines functions to fetch movie data and regional release dates for selected countries, handling API requests and responses efficiently. It uses parallel processing to speed up data retrieval and combines the results into data frames. Finally, it validates the data and saves the movie information with regional release dates to a CSV file, printing the dataset's dimensions and a preview of the data.
 
 ```{r}
 set.seed(123)  # Ensures reproducibility
@@ -234,7 +236,7 @@ head(all_movies)
 
 ```
 
-## Join the 2 datasets
+### Join the 2 datasets
 
 Here, we join the 2 datasets we have created from scraping TMDB.
 
@@ -248,9 +250,9 @@ merged_data <- all_movies %>%
 
 ```
 
-# SCRAPING AWARDS
+## SCRAPING AWARDS
 
-## Scraping for the Academy Awards
+### Scraping for the Academy Awards
 
 ```{r}
 # Wikipedia page URL
@@ -288,7 +290,7 @@ write.csv(oscar_movies_clean, "oscar_winning_films.csv", row.names = FALSE)
 
 ```
 
-## Scraping for Venice's Golden Lions
+### Scraping for Venice's Golden Lions
 
 ```{r} 
 url <- "https://en.wikipedia.org/wiki/Golden_Lion"
@@ -323,7 +325,7 @@ write.csv(golden_lion_clean, "venice_film_festival_winners.csv", row.names = FAL
 
 ```
 
-## Scraping for Cannes' Palme D'Or
+### Scraping for Cannes' Palme D'Or
 
 ```{r} 
 # Wikipedia page URL for Palme d'Or winners
@@ -371,7 +373,7 @@ write.csv(palme_dor_clean, "cannes_film_festival_winners.csv", row.names = FALSE
 
 ```
 
-### Merging the Awards Datasets
+#### Merging the Awards Datasets
 
 Here, we merge the different datasets we created by scraping for the different awards. We followed different steps:
 
@@ -470,7 +472,7 @@ write.csv(merged_data_awards, "merged_awards_data.csv", row.names = FALSE)
 
 ```
 
-# CREATE A UNIQUE DATASET
+## CREATE A UNIQUE DATASET
 
 We merged all the datasets to create one single dataset
 
@@ -520,6 +522,8 @@ write.csv(final_data, "final_data.csv")
 
 # ANALYSIS & VISUALIZATIONS
 
+In this section, we present a series of visualizations that explore various aspects of movie data, focusing on popularity and awards. Through these graphs, we aim to uncover trends, patterns, and insights that highlight the dynamics of the film industry over time.
+
 ## Necessary Libraries
 
 ```{r}
@@ -540,10 +544,7 @@ library(RColorBrewer)
 
 ```
 
-
-## Ekin
-
-#### 1. Number of Movies by Year
+## Number of Movies by Year
 
 This bar chart displays the **number of movies released per year** from 2000 to 2024. The **x-axis represents the release year**, while the **y-axis shows the number of movies**. The trend suggests an **increase in movie production over time**, with a significant peak in 2023. There are some fluctuations, but overall, more movies have been released in recent years compared to the early 2000s.
 
@@ -559,7 +560,7 @@ ggplot(final_data, aes(x = as.factor(release_year))) +
 
 ```
 
-### 2. Movie Distribution by Country (Top 10 countries producing the most movies)
+## Movie Distribution by Country (Top 10 countries producing the most movies)
 
 This bar chart displays the **top 10 countries that have produced the most movies**. The **y-axis represents the countries**, while the **x-axis shows the number of movies** produced. France (**FR**) leads as the **top movie-producing country**, followed closely by the **United States (US)**. Germany (**DE**), the United Kingdom (**GB**), and Spain (**ES**) also have significant movie production. The chart highlights that European countries dominate the list, with **Turkey (TR) and India (IN)** contributing fewer films compared to the others.
 
@@ -577,7 +578,7 @@ ggplot(top_countries, aes(x = reorder(country, n), y = n)) +
 
 ```
 
-### 3. Popularity Distribution
+## Popularity Distribution
 
 This histogram illustrates the **distribution of movie popularity scores**. The **x-axis represents popularity scores**, while the **y-axis indicates the number of movies** in each range. Most movies have a popularity score between **3 and 4**, with a significant concentration in this range. There are very few movies with popularity scores **below 2 or above 6**, indicating that extreme popularity scores are rare in this dataset.
 
@@ -590,7 +591,7 @@ ggplot(final_data, aes(x = popularity)) +
 
 ```
 
-### 5. Language Distribution (Top 10 most used languages)
+## Language Distribution (Top 10 most used languages)
 
 This bar chart shows the **top 10 most used languages in movie production**. The **y-axis lists the languages**, while the **x-axis represents the number of movies** produced in each language. **Japanese (ja)** leads as the most frequently used language, followed by **French (fr) and Spanish (es)**. Other widely used languages include **Korean (ko), Italian (it), and German (de)**. The chart highlights a strong presence of **European and Asian languages** in movie production, with **Hindi (hi) having the lowest count among the top 10**.
 
@@ -650,7 +651,7 @@ ggplot(word_data, aes(label = word, size = n, color = n)) +
 
 ```
 
-## TO CHECK 
+### TO CHECK 
 
 ```{r}
 df_pairs <- final_data %>%
@@ -671,8 +672,6 @@ country_graph <- graph_from_data_frame(df_pairs, directed = FALSE)
 
 
 print(country_graph)
-
-```
 
 
 ```{r}
@@ -773,11 +772,9 @@ Looking at the visualization, we can see that some countries, like the United St
 In contrast, some countries, like Brazil (BR) or Italy (IT), have smaller nodes, meaning they are involved in fewer co-productions. They might still play a role in international films but not as frequently as the major hubs. Additionally, some countries may have only a few connections, suggesting that they primarily produce films domestically rather than engaging in frequent international partnerships.
 
 
-
-
-## Au
-
 ## Preparing the data
+
+In this code, we prepare the data for visualizations by grouping the dataset by movie title and summarizing key attributes such as popularity, release dates, and awards. We then filter the data to identify the top 10 most popular movies based on their average popularity score. This process ensures that the data is structured and ready for creating insightful visualizations.
 
 ```{r}
 # Assuming final_data is your dataset
@@ -808,8 +805,10 @@ top_10_movies <- grouped_data %>%
 
 
 ## Awards Distribution
-to show the distribution of different awards won by the top 10 movies
-### all movies
+
+The provided code generates bar charts to visualize the distribution of awards among movies, using data from a dataset. For all movies, it sums up the counts of various awards and creates a bar plot to show the dominance of Academy Awards and nominations. Similarly, for the top 10 most popular movies, it highlights the prevalence of Academy recognition, while other prestigious awards like the Palme d'Or and Golden Lion are less represented.
+
+### Awards Distribution for All Movies
 
 ```{r}
 # Create a bar plot to show the distribution of different awards won by movies
@@ -826,7 +825,13 @@ highchart() %>%
   hc_subtitle(text = "All movies")
 ```
 
-### top 10 movies
+The first bar chart illustrates the distribution of various awards across all movies in the dataset. We can notice:
+
+★ Academy Award and Academy Nominated: Both categories have the highest counts, indicating that a significant number of movies have either won or been nominated for Academy Awards. This suggests a strong representation of these movies in prestigious award ceremonies.
+
+★ Palme d'Or and Golden Lion: These awards have much lower counts compared to the Academy-related categories. This indicates fewer movies in the dataset have received these awards, which are associated with the Cannes Film Festival (Palme d'Or) and the Venice Film Festival (Golden Lion).
+
+### Awards Distribution for Top 10 Most Popular Movies
 
 ```{r}
 # Create a bar plot to show the distribution of different awards won by movies
@@ -844,10 +849,19 @@ highchart() %>%
 
 ```
 
+The second bar chart focuses on the top 10 most popular movies, showing a similar pattern:
+
+★ Academy Award and Academy Nominated: These categories again dominate, with equal counts, suggesting that the most popular movies are also frequently recognized by the Academy.
+
+★ Palme d'Or and Golden Lion: These awards are absent in the top 10 most popular movies, indicating that popularity, as measured here, does not necessarily correlate with winning these specific awards.
+
+
+We notice that both charts highlight the prominence of Academy Awards and nominations in the dataset, while Palme d'Or and Golden Lion awards are less common. The top 10 most popular movies are particularly notable for their Academy recognition, but not for the other prestigious awards, suggesting a potential disparity between popularity and critical acclaim from international film festivals.
+
 
 ## Top Movies by Popularity
 
-a bar plot to highlight the top 10 movies by popularity and show their awards
+The code generates a bar and line chart to visualize the top 10 movies by popularity, highlighting various awards they have received. It uses the highchart function to create a column chart for popularity and overlays line charts to represent different awards, such as Academy Awards, nominations, Palme d'Or, and Golden Lion.
 
 ```{r}
 # Create a bar plot to highlight the top 10 movies by popularity and show their awards
@@ -864,11 +878,11 @@ highchart() %>%
 
 ```
 
+The graph illustrates the popularity of the top 10 movies with bars, while lines indicate the awards each movie has won. "I'm Still Here" stands out with the highest popularity, though it has minimal awards. Most movies show a consistent pattern of receiving Academy nominations, but few have won the Palme d'Or or Golden Lion, suggesting that popularity does not necessarily correlate with winning these prestigious awards.
 
 ## Popularity by release year
 
-[Line chart]
-This chart will show how the average popularity of movies has changed over the years. It can help identify trends in movie popularity over time.
+The code calculates the average popularity of movies for each release year and creates a line chart to visualize these trends over time. It groups the data by release year, computes the mean popularity, and uses the highchart function to plot the results, highlighting how movie popularity has evolved.
 
 ```{r}
 # Calculate average popularity by release year
@@ -887,6 +901,7 @@ highchart() %>%
 
 ```
 
+The graph shows fluctuations in movie popularity from 2000 to 2024, with a noticeable peak in 2024. This suggests a recent surge in popularity, possibly due to recent releases or increased interest in movies. Overall, the trend indicates variability in popularity over the years, with some periods of decline and recovery.
 
 
 
