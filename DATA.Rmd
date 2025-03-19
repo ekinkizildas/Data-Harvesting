@@ -38,12 +38,11 @@ api_key <- Sys.getenv("api_key")
 
 ```
 
-## SCRAPING
-scrapes also for the release date
+# LET'S SCRAPE
+
+This R script fetches and processes movie data using The Movie Database (TMDb, https://www.themoviedb.org) API. It sets up reproducible parallel processing to retrieve the top 50 movies for specified languages from 2000 to the current year. The script defines functions to fetch movie data and regional release dates for selected countries, handling API requests and responses efficiently. It uses parallel processing to speed up data retrieval and combines the results into data frames. Finally, it validates the data and saves the movie information with regional release dates to a CSV file, printing the dataset's dimensions and a preview of the data.
 
 ```{r}
-
-
 set.seed(123)  # Ensures reproducibility
 plan(multisession, workers = 4)  # Enable parallel processing
 
@@ -167,7 +166,6 @@ head(all_movies_regional_release_dates)
 ```
 
 ```{r}
-
 set.seed(123)
 # Enable parallel processing (4 workers)
 plan(multisession, workers = 4)
@@ -230,9 +228,12 @@ write.csv(all_movies, "optimized_movies.csv", row.names = FALSE)
 
 print(dim(all_movies))
 head(all_movies)
+
 ```
 
-## Join the 2 datasets from TMDB (UPDATED!!!)
+## Join the 2 datasets
+
+Here, we join the 2 datasets we have created from scraping TMDB.
 
 ```{r}
 # Load necessary libraries
@@ -242,16 +243,13 @@ library(dplyr)
 merged_data <- all_movies %>%
   left_join(all_movies_regional_release_dates, by = "movie_id")
 
-
 ```
 
+# SCRAPING AWARDS
 
 ## Scraping for the Academy Awards
 
 ```{r}
-
-
-
 # Wikipedia page URL
 oscar_url <- "https://en.wikipedia.org/wiki/List_of_Academy_Award%E2%80%93winning_films"
 
@@ -290,7 +288,6 @@ write.csv(oscar_movies_clean, "oscar_winning_films.csv", row.names = FALSE)
 ## Scraping for Venice's Golden Lions
 
 ```{r} 
-
 url <- "https://en.wikipedia.org/wiki/Golden_Lion"
 
 page <- read_html(url)
@@ -326,7 +323,6 @@ write.csv(golden_lion_clean, "venice_film_festival_winners.csv", row.names = FAL
 ## Scraping for Cannes' Palme D'Or
 
 ```{r} 
-
 # Wikipedia page URL for Palme d'Or winners
 url <- "https://en.wikipedia.org/wiki/Palme_d%27Or"
 
@@ -372,12 +368,13 @@ write.csv(palme_dor_clean, "cannes_film_festival_winners.csv", row.names = FALSE
 
 ```
 
-## Merging the Awards Datasets
+### Merging the Awards Datasets
+
+Here, we merge the different datasets we created by scraping for the different awards. We followed different steps:
 
 1. rename columns
 
 ```{r}
-
 # Load the datasets
 cannes_winners <- palme_dor_clean
 venice_winners <- golden_lion_clean
@@ -470,7 +467,9 @@ write.csv(merged_data_awards, "merged_awards_data.csv", row.names = FALSE)
 
 ```
 
-## Merging the whole dataset
+# CREATE A UNIQUE DATASET
+
+We merged all the datasets to create one single dataset
 
 ```{r}
 movies_data <- all_movies
@@ -482,6 +481,8 @@ final_data <- final_data %>%
   mutate(across(c(academy_award, academy_nominated, palme_dor, golden_lion), ~ replace(., is.na(.), 0)))
 
 ```
+
+rename columns
 
 ```{r}
 # Rename 'title.x' and 'title.y' to 'title' for consistency
@@ -499,8 +500,7 @@ final_data <- final_data %>%
 
 ```
 
-
-delete year & country.y columns & renames country
+delete "year" column
 
 ```{r}
 final_data <- final_data %>%
