@@ -40,7 +40,7 @@ api_key <- Sys.getenv("api_key")
 
 # LET'S SCRAPE
 
-This R script fetches and processes movie data using The Movie Database (TMDb, https://www.themoviedb.org) API. It sets up reproducible parallel processing to retrieve the top 50 movies for specified languages from 2000 to the current year. The script defines functions to fetch movie data and regional release dates for selected countries, handling API requests and responses efficiently. It uses parallel processing to speed up data retrieval and combines the results into data frames. Finally, it validates the data and saves the movie information with regional release dates to a CSV file, printing the dataset's dimensions and a preview of the data.
+This R script fetches and processes movie data using The Movie Database (TMDb) API (https://developer.themoviedb.org/docs/getting-started). It sets up reproducible parallel processing to retrieve the top 50 movies for specified languages from 2000 to the current year. The script defines functions to fetch movie data and regional release dates for selected countries, handling API requests and responses efficiently. It uses parallel processing to speed up data retrieval and combines the results into data frames. Finally, it validates the data and saves the movie information with regional release dates to a CSV file, printing the dataset's dimensions and a preview of the data.
 
 ```{r}
 set.seed(123)  # Ensures reproducibility
