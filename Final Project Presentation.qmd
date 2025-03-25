@@ -47,6 +47,8 @@ ggplot(final_data, aes(x = as.factor(release_year))) +
 
 ------------------------------------------------------------------------
 
+## Movie Distribution by Country
+
 ```{r}
 # 2. Movie Distribution by Country (Top 10 countries producing the most movies)
 top_countries <-final_data %>%
@@ -63,6 +65,8 @@ ggplot(top_countries, aes(x = reorder(country, n), y = n)) +
 
 ------------------------------------------------------------------------
 
+## Popularity Distribution
+
 ```{r}
 # 3. Popularity Distribution
 ggplot(final_data, aes(x = popularity)) +
@@ -73,6 +77,8 @@ ggplot(final_data, aes(x = popularity)) +
 ```
 
 ------------------------------------------------------------------------
+
+## Popularity & Awards
 
 ```{r}
 # Calculate total awards
@@ -89,6 +95,8 @@ ggplot(final_data, aes(x = popularity, y = total_awards)) +
 ```
 
 ------------------------------------------------------------------------
+
+## Titles' Words Cloud
 
 ```{r}
 word_data <- final_data %>%
@@ -111,6 +119,8 @@ ggplot(word_data, aes(label = word, size = n, color = n)) +
 ```
 
 ------------------------------------------------------------------------
+
+# ? 
 
 ```{r}
 df_pairs <- final_data %>%
@@ -135,6 +145,8 @@ print(country_graph)
 ```
 
 ------------------------------------------------------------------------
+
+## Movies Co-Production
 
 ```{r}
 
@@ -176,6 +188,8 @@ legend("topright", legend = names(country_colors),  # Country names
 ```
 
 ------------------------------------------------------------------------
+
+## 
 
 ```{r}
 
