@@ -1,5 +1,5 @@
 ---
-title: "Movies Popularity Presentation"
+title: "🎬 Movies Popularity Presentation 🍿"
 author: "Aurora Sterpellone. Ekin Kizildas"
 format: revealjs
 format: 
@@ -33,6 +33,8 @@ final_data <- read_csv("final_data.csv")
 
 ```
 
+## Number of Movies by Year 🎬
+
 ```{r}
 final_data <- read.csv("final_data.csv")
 
@@ -47,7 +49,7 @@ ggplot(final_data, aes(x = as.factor(release_year))) +
 
 ------------------------------------------------------------------------
 
-## Movie Distribution by Country
+## Movie Distribution by Country 🗺
 
 ```{r}
 # 2. Movie Distribution by Country (Top 10 countries producing the most movies)
@@ -65,7 +67,7 @@ ggplot(top_countries, aes(x = reorder(country, n), y = n)) +
 
 ------------------------------------------------------------------------
 
-## Popularity Distribution
+## Popularity Distribution 🏆
 
 ```{r}
 # 3. Popularity Distribution
@@ -78,7 +80,7 @@ ggplot(final_data, aes(x = popularity)) +
 
 ------------------------------------------------------------------------
 
-## Popularity & Awards
+## Popularity & Awards 🌟
 
 ```{r}
 # Calculate total awards
@@ -96,7 +98,7 @@ ggplot(final_data, aes(x = popularity, y = total_awards)) +
 
 ------------------------------------------------------------------------
 
-## Titles' Words Cloud
+## Titles' Words Cloud ✏☁️
 
 ```{r}
 word_data <- final_data %>%
@@ -146,7 +148,7 @@ print(country_graph)
 
 ------------------------------------------------------------------------
 
-## Movies Co-Production
+## Movies Co-Production 🤝
 
 ```{r}
 
@@ -221,7 +223,7 @@ top_10_movies <- grouped_data %>%
 
 ## Awards Distribution
 
-### Awards Distribution for All Movies
+### Awards Distribution for All Movies 🍿
 
 ```{r}
 # Create a bar plot to show the distribution of different awards won by movies
@@ -246,7 +248,7 @@ The first bar chart illustrates the distribution of various awards across all mo
 
 ------------------------------------------------------------------------
 
-### Awards Distribution for Top 10 Most Popular Movies
+### Awards Distribution for Top 10 Most Popular Movies 🍿
 
 ```{r}
 # Create a bar plot to show the distribution of different awards won by movies
@@ -274,7 +276,7 @@ Both charts highlight the prominence of Academy Awards and nominations in the da
 
 ------------------------------------------------------------------------
 
-## Top Movies by Popularity
+## Top Movies by Popularity 🎞️
 
 The code generates a bar and line chart to visualize the top 10 movies by popularity, highlighting various awards they have received. It uses the highchart function to create a column chart for popularity and overlays line charts to represent different awards, such as Academy Awards, nominations, Palme d'Or, and Golden Lion.
 
@@ -297,7 +299,7 @@ The graph illustrates the popularity of the top 10 movies with bars, while lines
 
 ------------------------------------------------------------------------
 
-## Popularity by release year
+## Popularity by release year 🎥
 
 The code calculates the average popularity of movies for each release year and creates a line chart to visualize these trends over time. It groups the data by release year, computes the mean popularity, and uses the highchart function to plot the results, highlighting how movie popularity has evolved.
 
