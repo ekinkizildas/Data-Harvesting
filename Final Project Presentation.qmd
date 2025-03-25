@@ -2,6 +2,10 @@
 title: "Movies Popularity Presentation"
 author: "Aurora Sterpellone. Ekin Kizildas"
 format: revealjs
+format: 
+  revealjs:
+      scrollable: true
+      embed-resources: true
 editor: visual
 ---
 
@@ -41,7 +45,7 @@ ggplot(final_data, aes(x = as.factor(release_year))) +
 
 ```
 
----
+------------------------------------------------------------------------
 
 ```{r}
 # 2. Movie Distribution by Country (Top 10 countries producing the most movies)
@@ -57,7 +61,7 @@ ggplot(top_countries, aes(x = reorder(country, n), y = n)) +
 
 ```
 
----
+------------------------------------------------------------------------
 
 ```{r}
 # 3. Popularity Distribution
@@ -68,7 +72,7 @@ ggplot(final_data, aes(x = popularity)) +
 
 ```
 
----
+------------------------------------------------------------------------
 
 ```{r}
 # Calculate total awards
@@ -84,7 +88,7 @@ ggplot(final_data, aes(x = popularity, y = total_awards)) +
 
 ```
 
----
+------------------------------------------------------------------------
 
 ```{r}
 word_data <- final_data %>%
@@ -106,7 +110,7 @@ ggplot(word_data, aes(label = word, size = n, color = n)) +
 
 ```
 
----
+------------------------------------------------------------------------
 
 ```{r}
 df_pairs <- final_data %>%
@@ -130,7 +134,7 @@ print(country_graph)
 
 ```
 
----
+------------------------------------------------------------------------
 
 ```{r}
 
@@ -171,7 +175,7 @@ legend("topright", legend = names(country_colors),  # Country names
 
 ```
 
----
+------------------------------------------------------------------------
 
 ```{r}
 
@@ -199,7 +203,7 @@ top_10_movies <- grouped_data %>%
 
 ```
 
----
+------------------------------------------------------------------------
 
 ## Awards Distribution
 
@@ -226,7 +230,7 @@ The first bar chart illustrates the distribution of various awards across all mo
 
 ★ Palme d'Or and Golden Lion: These awards have much lower counts compared to the Academy-related categories. This indicates fewer movies in the dataset have received these awards, which are associated with the Cannes Film Festival (Palme d'Or) and the Venice Film Festival (Golden Lion).
 
----
+------------------------------------------------------------------------
 
 ### Awards Distribution for Top 10 Most Popular Movies
 
@@ -254,7 +258,7 @@ The second bar chart focuses on the top 10 most popular movies, showing a simila
 
 Both charts highlight the prominence of Academy Awards and nominations in the dataset, while Palme d'Or and Golden Lion awards are less common. The top 10 most popular movies are particularly notable for their Academy recognition, but not for the other prestigious awards, suggesting a potential disparity between popularity and critical acclaim from international film festivals.
 
----
+------------------------------------------------------------------------
 
 ## Top Movies by Popularity
 
@@ -277,7 +281,7 @@ highchart() %>%
 
 The graph illustrates the popularity of the top 10 movies with bars, while lines indicate the awards each movie has won. "I'm Still Here" stands out with the highest popularity, though it has minimal awards. Most movies show a consistent pattern of receiving Academy nominations, but few have won the Palme d'Or or Golden Lion, suggesting that popularity does not necessarily correlate with winning these prestigious awards.
 
----
+------------------------------------------------------------------------
 
 ## Popularity by release year
 
