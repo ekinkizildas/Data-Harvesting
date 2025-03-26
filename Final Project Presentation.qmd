@@ -25,6 +25,7 @@ library(highcharter)
 library(tidyr)
 library(RColorBrewer)
 library(readr)
+library(circlize)
 ```
 
 ```{r}
@@ -32,6 +33,7 @@ library(readr)
 final_data <- read_csv("final_data.csv")
 
 ```
+
 ```{r, echo = FALSE}
 
 grouped_data <- final_data %>%
@@ -58,7 +60,11 @@ top_10_movies <- grouped_data %>%
 
 ```
 
-## ABOUT SCRAPING AND CODES… 
+## ABOUT SCRAPING AND CODES…
+
+![](images/clipboard-1697691976.png)
+
+![](images/clipboard-1674512836.png)
 
 ------------------------------------------------------------------------
 
@@ -214,10 +220,6 @@ country_graph <- graph_from_data_frame(df_pairs, directed = FALSE)
 
 ```{r}
 
-
-library(circlize)
-library(dplyr)
-
 # Prepare the dataset for the chord diagram
 df_chord <- df_pairs %>%
   select(from, to, weight) %>%
@@ -339,5 +341,6 @@ highchart() %>%
 
 ------------------------------------------------------------------------
 
-#               THANK YOU!🎖️
+# THANK YOU!🎖️
+
 ![Martin Scorsese](thank-you-martin-scorsese.gif)
