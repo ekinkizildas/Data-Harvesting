@@ -76,7 +76,7 @@ top_10_movies <- grouped_data %>%
 
 ---
 
-## What Happened For Country and Popularity?
+## What Happened to Country and Popularity?
 
 ![](picture3.png)
 
@@ -104,7 +104,7 @@ ggplot(top_countries, aes(x = reorder(country, n), y = n)) +
 
 ------------------------------------------------------------------------
 
-## Titles' Words Cloud ️🖍️
+## Titles' Words Cloud️🖍️
 
 ```{r}
 word_data <- final_data %>%
@@ -361,4 +361,4 @@ highchart() %>%
 
 # THANK YOU!🎖️
 
-![Martin Scorsese](thank-you-martin-scorsese.gif)
+![ ](thank-you-martin-scorsese.gif)
