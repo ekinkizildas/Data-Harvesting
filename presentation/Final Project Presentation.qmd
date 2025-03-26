@@ -74,7 +74,7 @@ top_10_movies <- grouped_data %>%
 
 ![](picture2.png)
 
----
+------------------------------------------------------------------------
 
 ## What Happened to Country and Popularity?
 
@@ -288,7 +288,6 @@ legend("topright", legend = names(country_colors),  # Country names
 
 ```
 
-
 ------------------------------------------------------------------------
 
 ```{r, echo = FALSE}
@@ -316,7 +315,6 @@ top_10_movies <- grouped_data %>%
   head(10)
 
 ```
-
 
 ### Awards Distribution for All Movies 🍿
 
@@ -376,6 +374,6 @@ highchart() %>%
 
 ------------------------------------------------------------------------
 
-# THANK YOU!🎖️
+# Thank You ! 🎖️
 
-![ ](thank-you-martin-scorsese.gif)
+![](thank-you-martin-scorsese.gif){width="474"}
