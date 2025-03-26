@@ -1,7 +1,6 @@
 ---
 title: "🎬 Movies Popularity Presentation 🍿"
 author: "Aurora Sterpellone, Ekin Kizildas"
-format: revealjs
 format: 
   revealjs:
       scrollable: true
@@ -32,20 +31,33 @@ library(readr)
 final_data <- read_csv("final_data.csv")
 
 ```
+```{r, echo = FALSE}
 
-## Number of Movies by Year 🎬
+grouped_data <- final_data %>%
+  group_by(title) %>%
+  summarise(
+    movie_id = first(movie_id),
+    release_year = first(release_year),
+    popularity = mean(popularity, na.rm = TRUE),
+    poster_path = first(poster_path),
+    language = first(language),
+    country = toString(unique(country)),  # Combine unique countries
+    release_date = toString(unique(release_date)),  # Combine unique release dates
+    academy_award = max(academy_award),
+    academy_nominated = max(academy_nominated),
+    palme_dor = max(palme_dor),
+    golden_lion = max(golden_lion)
+  ) %>%
+  ungroup()
 
-```{r}
-final_data <- read.csv("final_data.csv")
-
-# 1. Number of Movies by Year
-ggplot(final_data, aes(x = as.factor(release_year))) +
-  geom_bar(fill = "purple", alpha = 0.7) +
-  labs(title = "Number of Movies by Year", x = "Release Year", y = "Movie Count") +
-  theme_minimal() +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+# Filter the top 10 most popular movies
+top_10_movies <- grouped_data %>%
+  arrange(desc(popularity)) %>%
+  head(10)
 
 ```
+
+## ABOUT SCRAPING AND CODES… 
 
 ------------------------------------------------------------------------
 
@@ -61,37 +73,6 @@ ggplot(top_countries, aes(x = reorder(country, n), y = n)) +
   geom_bar(stat = "identity", fill = "purple", alpha = 0.7) +
   coord_flip() +
   labs(title = "Top 10 Countries Producing the Most Movies", x = "Country", y = "Movie Count") +
-  theme_minimal()
-
-```
-
-------------------------------------------------------------------------
-
-## Popularity Distribution 🏆
-
-```{r}
-# 3. Popularity Distribution
-ggplot(final_data, aes(x = popularity)) +
-  geom_histogram(bins = 20, fill = "purple", color = "black", alpha = 0.7) +
-  labs(title = "Popularity Distribution", x = "Popularity", y = "Movie Count") +
-  theme_minimal()
-
-```
-
-------------------------------------------------------------------------
-
-## Popularity & Awards 🌟
-
-```{r}
-# Calculate total awards
-final_data <- final_data %>%
-  mutate(total_awards = academy_award + academy_nominated + palme_dor + golden_lion)
-
-# Scatter plot
-ggplot(final_data, aes(x = popularity, y = total_awards)) +
-  geom_point(alpha = 0.6, color = "purple") +
-  geom_smooth(method = "lm", color = "red", se = FALSE) +  # Regression line
-  labs(title = "Popularity vs. Awards", x = "Popularity", y = "Total Awards") +
   theme_minimal()
 
 ```
@@ -122,9 +103,73 @@ ggplot(word_data, aes(label = word, size = n, color = n)) +
 
 ------------------------------------------------------------------------
 
-# ?
+## Number of Movies by Year 🎬
 
 ```{r}
+# 1. Number of Movies by Year
+ggplot(final_data, aes(x = as.factor(release_year))) +
+  geom_bar(fill = "purple", alpha = 0.7) +
+  labs(title = "Number of Movies by Year", x = "Release Year", y = "Movie Count") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+```
+
+------------------------------------------------------------------------
+
+## Popularity Distribution 🏆
+
+```{r}
+# 3. Popularity Distribution
+ggplot(final_data, aes(x = popularity)) +
+  geom_histogram(bins = 20, fill = "purple", alpha = 0.7) +
+  labs(title = "Popularity Distribution", x = "Popularity", y = "Movie Count") +
+  theme_minimal()
+
+```
+
+------------------------------------------------------------------------
+
+## Popularity by release year 🎥
+
+```{r}
+# Calculate average popularity by release year
+popularity_by_year <- grouped_data %>%
+  group_by(release_year) %>%
+  summarise(avg_popularity = mean(popularity, na.rm = TRUE))
+
+# Create a line chart
+highchart() %>%
+  hc_chart(type = 'line') %>%
+  hc_xAxis(title = list(text = "Release Year"), categories = popularity_by_year$release_year) %>%
+  hc_add_series(name = "Average Popularity", data = popularity_by_year$avg_popularity, color = "#8856a7") %>%
+  hc_title(text = "Average Movie Popularity by Release Year") %>%
+  hc_subtitle(text = "Trends in Movie Popularity Over Time")
+
+
+```
+
+------------------------------------------------------------------------
+
+## Popularity & Awards 🌟
+
+```{r}
+# Calculate total awards
+final_data <- final_data %>%
+  mutate(total_awards = academy_award + academy_nominated + palme_dor + golden_lion)
+
+# Scatter plot
+ggplot(final_data, aes(x = popularity, y = total_awards)) +
+  geom_point(alpha = 0.6, color = "purple") +
+  geom_smooth(method = "lm", color = "red", se = FALSE) +  # Regression line
+  labs(title = "Popularity vs. Awards", x = "Popularity", y = "Total Awards") +
+  theme_minimal()
+
+```
+
+------------------------------------------------------------------------
+
+```{r, echo = FALSE}
 df_pairs <- final_data %>%
   select(title, country) %>%  
   group_by(title) %>%
@@ -141,12 +186,7 @@ df_pairs <- final_data %>%
 
 country_graph <- graph_from_data_frame(df_pairs, directed = FALSE)
 
-
-print(country_graph)
-
 ```
-
-------------------------------------------------------------------------
 
 ## Movies Co-Production 🤝
 
@@ -191,9 +231,7 @@ legend("topright", legend = names(country_colors),  # Country names
 
 ------------------------------------------------------------------------
 
-## 
-
-```{r}
+```{r, echo = FALSE}
 
 grouped_data <- final_data %>%
   group_by(title) %>%
@@ -219,8 +257,6 @@ top_10_movies <- grouped_data %>%
 
 ```
 
-------------------------------------------------------------------------
-
 ## Awards Distribution
 
 ### Awards Distribution for All Movies 🍿
@@ -239,12 +275,6 @@ highchart() %>%
   hc_title(text = "Awards Distribution") %>%
   hc_subtitle(text = "All movies")
 ```
-
-The first bar chart illustrates the distribution of various awards across all movies in the dataset. We can notice:
-
-★ Academy Award and Academy Nominated: Both categories have the highest counts, indicating that a significant number of movies have either won or been nominated for Academy Awards. This suggests a strong representation of these movies in prestigious award ceremonies.
-
-★ Palme d'Or and Golden Lion: These awards have much lower counts compared to the Academy-related categories. This indicates fewer movies in the dataset have received these awards, which are associated with the Cannes Film Festival (Palme d'Or) and the Venice Film Festival (Golden Lion).
 
 ------------------------------------------------------------------------
 
@@ -266,19 +296,9 @@ highchart() %>%
 
 ```
 
-The second bar chart focuses on the top 10 most popular movies, showing a similar pattern:
-
-★ Academy Award and Academy Nominated: These categories again dominate, with equal counts, suggesting that the most popular movies are also frequently recognized by the Academy.
-
-★ Palme d'Or and Golden Lion: These awards are absent in the top 10 most popular movies, indicating that popularity, as measured here, does not necessarily correlate with winning these specific awards.
-
-Both charts highlight the prominence of Academy Awards and nominations in the dataset, while Palme d'Or and Golden Lion awards are less common. The top 10 most popular movies are particularly notable for their Academy recognition, but not for the other prestigious awards, suggesting a potential disparity between popularity and critical acclaim from international film festivals.
-
 ------------------------------------------------------------------------
 
 ## Top Movies by Popularity 🎞️
-
-The code generates a bar and line chart to visualize the top 10 movies by popularity, highlighting various awards they have received. It uses the highchart function to create a column chart for popularity and overlays line charts to represent different awards, such as Academy Awards, nominations, Palme d'Or, and Golden Lion.
 
 ```{r}
 # Create a bar plot to highlight the top 10 movies by popularity and show their awards
@@ -295,29 +315,7 @@ highchart() %>%
 
 ```
 
-The graph illustrates the popularity of the top 10 movies with bars, while lines indicate the awards each movie has won. "I'm Still Here" stands out with the highest popularity, though it has minimal awards. Most movies show a consistent pattern of receiving Academy nominations, but few have won the Palme d'Or or Golden Lion, suggesting that popularity does not necessarily correlate with winning these prestigious awards.
-
 ------------------------------------------------------------------------
 
-## Popularity by release year 🎥
-
-The code calculates the average popularity of movies for each release year and creates a line chart to visualize these trends over time. It groups the data by release year, computes the mean popularity, and uses the highchart function to plot the results, highlighting how movie popularity has evolved.
-
-```{r}
-# Calculate average popularity by release year
-popularity_by_year <- grouped_data %>%
-  group_by(release_year) %>%
-  summarise(avg_popularity = mean(popularity, na.rm = TRUE))
-
-# Create a line chart
-highchart() %>%
-  hc_chart(type = 'line') %>%
-  hc_xAxis(title = list(text = "Release Year"), categories = popularity_by_year$release_year) %>%
-  hc_add_series(name = "Average Popularity", data = popularity_by_year$avg_popularity, color = "#8856a7") %>%
-  hc_title(text = "Average Movie Popularity by Release Year") %>%
-  hc_subtitle(text = "Trends in Movie Popularity Over Time")
-
-
-```
-
-The graph shows fluctuations in movie popularity from 2000 to 2024, with a noticeable peak in 2024. This suggests a recent surge in popularity, possibly due to recent releases or increased interest in movies. Overall, the trend indicates variability in popularity over the years, with some periods of decline and recovery.
+#               THANK YOU!🎖️
+![Martin Scorsese](thank-you-martin-scorsese.gif)
