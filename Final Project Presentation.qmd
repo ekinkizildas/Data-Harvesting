@@ -62,6 +62,8 @@ top_10_movies <- grouped_data %>%
 
 ## Objective
 
+![ ](i-used-to-watch-a-lot-of-movies-kartik-aaryan.gif)
+
 ---
 
 ## ABOUT SCRAPING AND CODES…
@@ -223,6 +225,8 @@ country_graph <- graph_from_data_frame(df_pairs, directed = FALSE)
 ## Movies Co-Production 🤝
 
 ```{r}
+# Set background color
+par(bg = "#fbf3e4") 
 
 # Prepare the dataset for the chord diagram
 df_chord <- df_pairs %>%
