@@ -1,6 +1,6 @@
 ---
-title: "🎬 Movies Popularity Presentation 🍿"
-author: "Aurora Sterpellone, Ekin Kizildas"
+title: "🎬 Movies Popularity 🍿"
+author: "Aurora Sterpellone & Ekin Kizildas"
 format: 
   revealjs:
       scrollable: true
