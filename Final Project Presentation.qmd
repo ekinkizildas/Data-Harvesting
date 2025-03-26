@@ -1,6 +1,6 @@
 ---
 title: "🎬 Movies Popularity Presentation 🍿"
-author: "Aurora Sterpellone. Ekin Kizildas"
+author: "Aurora Sterpellone, Ekin Kizildas"
 format: revealjs
 format: 
   revealjs:
@@ -122,7 +122,7 @@ ggplot(word_data, aes(label = word, size = n, color = n)) +
 
 ------------------------------------------------------------------------
 
-# ? 
+# ?
 
 ```{r}
 df_pairs <- final_data %>%
