@@ -62,13 +62,15 @@ top_10_movies <- grouped_data %>%
 
 ## Objective
 
-![ ](i-used-to-watch-a-lot-of-movies-kartik-aaryan.gif)
+![](i-used-to-watch-a-lot-of-movies-kartik-aaryan.gif)
 
----
+------------------------------------------------------------------------
 
 ## ABOUT SCRAPING AND CODES…
 
 ![](Screenshot 2025-03-26 at 2.32.42 PM.png)
+
+---
 
 ![](Screenshot 2025-03-26 at 2.34.12 PM.png)
 
