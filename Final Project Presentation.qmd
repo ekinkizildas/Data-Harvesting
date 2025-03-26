@@ -60,11 +60,15 @@ top_10_movies <- grouped_data %>%
 
 ```
 
+## Objective
+
+---
+
 ## ABOUT SCRAPING AND CODES…
 
-![](images/clipboard-1697691976.png)
+![](Screenshot 2025-03-26 at 2.32.42 PM.png)
 
-![](images/clipboard-1674512836.png)
+![](Screenshot 2025-03-26 at 2.34.12 PM.png)
 
 ------------------------------------------------------------------------
 
