@@ -107,27 +107,45 @@ ggplot(top_countries, aes(x = reorder(country, n), y = n)) +
 ## Titles' Words Cloud️🖍️
 
 ```{r}
+
+
+# Prepare the word frequency data
 word_data <- final_data %>%
-  filter(!is.na(title)) %>%
-  unnest_tokens(word, title) %>%
-  count(word, sort = TRUE) %>%
-  filter(n > 5)  # Keep words appearing more than 5 times
+  filter(!is.na(title)) %>%                     # Remove missing titles
+  unnest_tokens(word, title) %>%                # Tokenize titles into words
+  count(word, sort = TRUE) %>%                  # Count word frequency
+  filter(n > 5) %>%                             # Keep words used more than 5 times
+  filter(!word %in% stopwords("en"))            # Remove common English stop words
 
-# Remove stop words (English and other common words)
+# Add a color category: "movie" will be highlighted
 word_data <- word_data %>%
-  filter(!word %in% stopwords("en"))  # Remove common English stop words
+  mutate(color_group = ifelse(word == "movie", "highlight", "normal"))
 
-# Improved Word Cloud
-ggplot(word_data, aes(label = word, size = n, color = n)) +
-  geom_text_wordcloud(area_corr = TRUE) +
-  scale_color_gradient(low = "#4b6cb7", high = "#182848")  +
-  labs(title = "Most Common Words in Movie Titles ") +
-  theme_minimal() +
+# Define custom color palette:
+# - "movie" will appear in red
+# - all other words in dark blue
+custom_colors <- c("highlight" = "#e63946",   # red
+                   "normal" = "#1d3557")       # dark blue
+
+# Plot the word cloud
+ggplot(word_data, aes(label = word, size = n, color = color_group)) +
+  geom_text_wordcloud(
+    area_corr = TRUE,          # Better area adjustment for word size
+    rm_outside = TRUE,         # Remove words that don't fit the layout
+      scale = c(4, 0.5),
+    eccentricity = 1,          # Make the shape more circular
+    grid_size = 6,             # Layout precision
+    family = "sans"            # Use a clean font
+  ) +
+  scale_color_manual(values = custom_colors) +  # Apply the custom colors
+  labs(title = "Most Common Words in Movie Titles") +
+  theme_minimal(base_family = "sans") +
   theme(
-    plot.background = element_rect(fill = "#fbf3e4", color = NA),
+    plot.background = element_rect(fill = "#fbf3e4", color = NA),   # Soft beige background
     panel.background = element_rect(fill = "#fbf3e4", color = "#fbf3e4"),
-  plot.title = element_text(size = 16, face = "bold", hjust = 0.5, color = "#2e2e2e")
+    plot.title = element_text(size = 16, face = "bold", hjust = 0.5, color = "#222")  # Bold and centered title
   )
+
 
 ```
 
@@ -299,7 +317,6 @@ top_10_movies <- grouped_data %>%
 
 ```
 
-## Awards Distribution
 
 ### Awards Distribution for All Movies 🍿
 
