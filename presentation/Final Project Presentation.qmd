@@ -78,6 +78,8 @@ top_10_movies <- grouped_data %>%
 
 ## What Happened to Country and Popularity?
 
+![](what-huh.gif)
+
 ![](picture3.png)
 
 ------------------------------------------------------------------------
